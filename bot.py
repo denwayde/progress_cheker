@@ -10,7 +10,7 @@ load_dotenv()  # Загрузка переменных из файла .env
 
 
 bot_key = os.getenv('BOT_TOKEN')
-   
+# password = os.getenv('PASSWORD')
 
 
 # Запуск бота
