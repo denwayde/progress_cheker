@@ -22,7 +22,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
 from handlers.for_get_password import correct_password_proccess
 @router.message(SetConfigsToBot.set_password)
 async def sss_psw(message: Message, state: FSMContext, bot: Bot):
-    await correct_password_proccess(message, state, bot, "Добро пожаловать в закрытый бот саморазвития, Напишите пожалуйста боту Ваше ФИ или всем известный никнейм", SetConfigsToBot.set_name)
+    await correct_password_proccess(message, state, bot, SetConfigsToBot.set_name)
 
 
 @router.message(SetConfigsToBot.set_name)
