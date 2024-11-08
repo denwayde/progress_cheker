@@ -17,7 +17,7 @@ async def correct_password_proccess(message, state, bot, new_state):
             await if_user(message)
             await state.update_data(name = message.text)
             await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
-            await state.set_state(new_state
+            await state.set_state(new_state)
     else:
         await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
         await message.answer('Вы ввели неверный пароль. Если Вы уверенны в правильности пароля попробуйте обратиться к администратору.')
