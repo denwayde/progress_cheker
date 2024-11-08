@@ -11,7 +11,7 @@ async def correct_password_proccess(message, state, bot, new_state):
         # print(type(message.chat.id))
         # print(type(admin_id))
         if message.chat.id == int(admin_id):
-            await if_admin(message)
+            await if_admin(message, state)
             await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
         else:
             await if_user(message)
@@ -24,7 +24,8 @@ async def correct_password_proccess(message, state, bot, new_state):
         await state.clear()
 
 
-async def if_admin(message):
+async def if_admin(message, state):
+    await state.clear()
     await message.answer('Добро пожаловать, администратор. Вам доступны следующие опции: Добавление или удаление имен пользователя, пунктов прогресса, минимумов прогресса, времени оповещения Вас, установление времени до которого должны оповестить Вас.\nЕсли у Вас возникнут вопросы, обращайтесь к https://t.me/Dinis_Fizik', reply_markup = admin_btns())
     
 
