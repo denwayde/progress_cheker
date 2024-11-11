@@ -29,6 +29,6 @@ async def if_admin(message, state):
     await message.answer('Добро пожаловать, администратор. Вам доступны следующие опции: Добавление или удаление имен пользователя, пунктов прогресса, минимумов прогресса, времени оповещения Вас, установление времени до которого должны оповестить Вас.\nЕсли у Вас возникнут вопросы, обращайтесь к https://t.me/Dinis_Fizik', reply_markup = admin_btns())
     
 
-
+from btns.users_for_edit import users_for_edit
 async def if_user(message):
-    await message.answer('Добро пожаловать. Выберите пожалуйста имя которое предоставил Вам администратор.\nЕсли у Вас возникнут вопросы, обращайтесь к https://t.me/Dinis_Fizik')
+    await message.answer('Добро пожаловать. Выберите пожалуйста имя которое предоставил Вам администратор.\nЕсли у Вас возникнут вопросы, обращайтесь к https://t.me/Dinis_Fizik', reply_markup=users_for_edit('userchosen_name_'))

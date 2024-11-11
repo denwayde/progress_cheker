@@ -171,6 +171,20 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
+
+
+#------------------------------------------------------------------------------------------------------ЮЗЕР ВЫБИРАЕТ СВОЙ НИКНЕЙМ------------------------------------------------------------------------------------
+
+from btns.user_main import user_main
+@router.callback_query(F.data.startswith('userchosen_name_'))
+async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
+    user = call.data.split('_')[2]
+    delete_or_insert_data("UPDATE usernames SET telega_id = ? WHERE name = ?", (call.message.chat.id, user, ))
+    await call.message.answer(f"Теперь Ваш никнейм \'{user}\'", reply_markup = user_main())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
+
 # @router.message(SetConfigsToBot.set_name)
 # async def sss_name(message: Message, state: FSMContext, bot: Bot):
 #     await correct_password_proccess(message, state, bot, "!!!!!!!!!!!!!!!!!!!!!!!", SetConfigsToBot.set_name)
