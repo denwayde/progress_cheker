@@ -189,27 +189,27 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
 
 from btns.points_for_edit import points_for_edit
 @router.callback_query(F.data == 'user_report')
-async def usr_stgs_edit(call: CallbackQuery, bot: Bot):
+async def usr_report_process(call: CallbackQuery, bot: Bot):
     await call.message.answer(f"Выберите пункт прогресса который вы хотите отметить", reply_markup=points_for_edit('checkpoint_'))
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
 @router.callback_query(F.data.startswith('checkpoint_'), StateFilter(None))
-async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
+async def edit_checkpoint(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
     checkpoint = call.data.split('_')[1]
     await state.update_data(checkpoint = checkpoint)
-    await call.message.answer(f"Вы хотите отметить \'{user}\'. В поле ввода внесите выполненный прогресс")
+    await call.message.answer(f"Вы хотите отметить \'{checkpoint}\'. В поле ввода внесите выполненный прогресс")
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await state.set_state(SetConfigsToBot.set_checkpoint)
     await call.answer()
 
-@router.message(SetConfigsToBot.set_checkpoint)!!!!!!!!!!!!!dodelyvay tut
-async def new_usrname(message: Message, state: FSMContext, bot: Bot):
+@router.message(SetConfigsToBot.set_checkpoint)
+async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
     #await state.clear()
     user = await state.get_data()
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
-    delete_or_insert_data("UPDATE points SET name = ? WHERE name = ?", (message.text, user['name']))
+    delete_or_insert_data("UPDATE user_points SET point_name = ?, telega_id = ?, score = ?, date = ? WHERE name = ?", (message.text, user['name']))
     await message.answer(f"Вы изменили имя {user['name']} на {message.text}", reply_markup=points_main_menu())
     await state.clear()
 
