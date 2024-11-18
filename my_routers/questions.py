@@ -22,7 +22,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
 from handlers.for_get_password import correct_password_proccess
 @router.message(SetConfigsToBot.set_password)
 async def sss_psw(message: Message, state: FSMContext, bot: Bot):
-    await correct_password_proccess(message, state, bot, SetConfigsToBot.set_name)#tut prodoljaetsya algoritm dlya userov
+    await correct_password_proccess(message, state, bot)#tut prodoljaetsya algoritm dlya userov-----SetConfigsToBot.set_name
 
 
 from handlers.user_settings import call_users_settings
@@ -102,6 +102,14 @@ async def back_to_main_menu(call: CallbackQuery, bot: Bot):
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
+#------------------------------------------------------------------------------------------------------АДМИН выполняет возврат к гглавной поинтов------------------------------------------------------------------------------------
+
+@router.callback_query(F.data == 'back_to_points_main_menu')
+async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
+    await call.message.answer(f"Меню пункты", reply_markup=points_main_menu())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
 #------------------------------------------------------------------------------------------------------АДМИН ДОБАВЛЯЕТ ПУНКТЫ ПРОГРЕССА------------------------------------------------------------------------------------
 from btns.points_main import points_main_menu
 @router.callback_query(F.data == 'points')
@@ -132,7 +140,7 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
 from btns.points_for_edit import points_for_edit
 @router.callback_query(F.data == 'edit_progress_points')
 async def usr_stgs_edit(call: CallbackQuery, bot: Bot):
-    await call.message.answer(f"Выберите пункт прогресса который вы хотите изменить", reply_markup=points_for_edit('editpoints_'))
+    await call.message.answer(f"Выберите пункт прогресса который вы хотите изменить", reply_markup=points_for_edit('editpoints_', 'back_to_points_main_menu'))
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
@@ -155,12 +163,15 @@ async def new_usrname(message: Message, state: FSMContext, bot: Bot):
     await message.answer(f"Вы изменили имя {user['name']} на {message.text}", reply_markup=points_main_menu())
     await state.clear()
 
+
+
 #------------------------------------------------------------------------------------------------------АДМИН УДАЛЯЕТ ПУНКТ ПРОГРЕССА------------------------------------------------------------------------------------
 @router.callback_query(F.data == 'delete_progress_points')
 async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
-    await call.message.answer(f"Выберите пункт прогресса который вы хотите удалить", reply_markup=points_for_edit('deletepoint_'))
+    await call.message.answer(f"Выберите пункт прогресса который вы хотите удалить", reply_markup=points_for_edit('deletepoint_', 'back_to_points_main_menu'))
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
+
 
 @router.callback_query(F.data.startswith('deletepoint_'), StateFilter(None))
 async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
@@ -184,33 +195,54 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
-
-#------------------------------------------------------------------------------------------------------ЮЗЕР ВЫПОЛНЯЕТ ОТЧЕТ------------------------------------------------------------------------------------
-
-from btns.points_for_edit import points_for_edit
-@router.callback_query(F.data == 'user_report')
-async def usr_report_process(call: CallbackQuery, bot: Bot):
-    await call.message.answer(f"Выберите пункт прогресса который вы хотите отметить", reply_markup=points_for_edit('checkpoint_'))
+#------------------------------------------------------------------------------------------------------ЮЗЕР ВЫПОЛНЯЕТ ВОЗВРАТ НА СВОЕ МЕНЮ------------------------------------------------------------------------------------
+@router.callback_query(F.data == 'back_to_users_menu')
+async def back_to_users_menu(call: CallbackQuery, bot: Bot):
+    await call.message.answer(f"Главная пользователя", reply_markup=user_main())
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
+#------------------------------------------------------------------------------------------------------ЮЗЕР ВЫПОЛНЯЕТ ОТЧЕТ------------------------------------------------------------------------------------
+
+# from btns.points_for_edit import points_for_edit
+@router.callback_query(F.data == 'user_report')
+async def usr_report_process(call: CallbackQuery, bot: Bot):
+    await call.message.answer(f"Выберите пункт прогресса который вы хотите отметить", reply_markup=points_for_edit('checkpoint_', 'back_to_users_menu'))
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
 
 @router.callback_query(F.data.startswith('checkpoint_'), StateFilter(None))
 async def edit_checkpoint(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
     checkpoint = call.data.split('_')[1]
-    await state.update_data(checkpoint = checkpoint)
+    await state.update_data(check = checkpoint)
     await call.message.answer(f"Вы хотите отметить \'{checkpoint}\'. В поле ввода внесите выполненный прогресс")
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
-    await state.set_state(SetConfigsToBot.set_checkpoint)
     await call.answer()
+    await state.set_state(SetConfigsToBot.set_checkpoint)
+    
 
+
+from functions import is_date_in_current_week
+from datetime import datetime, timedelta, date
 @router.message(SetConfigsToBot.set_checkpoint)
 async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
     #await state.clear()
     user = await state.get_data()
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
-    delete_or_insert_data("UPDATE user_points SET point_name = ?, telega_id = ?, score = ?, date = ? WHERE name = ?", (message.text, user['name']))
-    await message.answer(f"Вы изменили имя {user['name']} на {message.text}", reply_markup=points_main_menu())
+    last_user_point_record_list = select_data("SELECT* FROM user_points WHERE point_name = ? AND telega_id = ? ORDER BY id DESC LIMIT 1", (user['check'], message.chat.id,))#(2, 'kkk', 6293086969, 6, '2024-11-06')
+    #print(last_user_point_record_list)
+    if last_user_point_record_list == []:
+        delete_or_insert_data("insert into user_points (point_name, telega_id, score, date) values (?, ?, ?, ?)", (user['check'], message.chat.id, message.text, date.today()))
+    else:
+        last_user_point_record_list = last_user_point_record_list[0]    
+        date_convert = date.fromisoformat(last_user_point_record_list[-1])
+        if is_date_in_current_week(date_convert):
+            new_score = int(last_user_point_record_list[3]) + int(message.text)
+            delete_or_insert_data("UPDATE user_points SET score = ?, date = ? WHERE id = ?", (new_score, date.today(), last_user_point_record_list[0]))
+        else:
+            delete_or_insert_data("insert into user_points (point_name, telega_id, score, date) values (?, ?, ?, ?)", (user['check'], message.chat.id, message.text, date.today()))
+    await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_main_menu())
     await state.clear()
 
 

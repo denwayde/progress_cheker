@@ -24,3 +24,4 @@ def insert_many(insertion_query, lst):
     connection.commit()
     
 #print(select_data("SELECT name FROM usernames"))
+print(select_data("SELECT* FROM user_points WHERE point_name = ? AND telega_id = ? ORDER BY id DESC LIMIT 1", ('kkk', '6293086969', )))

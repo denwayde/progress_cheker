@@ -6,7 +6,7 @@ load_dotenv()  # Загрузка переменных из файла .env
 password = os.getenv('PASSWORD')
 admin_id = os.getenv('ADMIN_ID')
 
-async def correct_password_proccess(message, state, bot, new_state):
+async def correct_password_proccess(message, state, bot):
     if message.text == password:
         # print(type(message.chat.id))
         # print(type(admin_id))
@@ -15,9 +15,10 @@ async def correct_password_proccess(message, state, bot, new_state):
             await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
         else:
             await if_user(message)
-            await state.update_data(name = message.text)
+            await state.clear()
+            #await state.update_data(name = message.text)
             await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
-            await state.set_state(new_state)
+            #await state.set_state(new_state)
     else:
         await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
         await message.answer('Вы ввели неверный пароль. Если Вы уверенны в правильности пароля попробуйте обратиться к администратору.')
