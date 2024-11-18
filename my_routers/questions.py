@@ -242,9 +242,19 @@ async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
             delete_or_insert_data("UPDATE user_points SET score = ?, date = ? WHERE id = ?", (new_score, date.today(), last_user_point_record_list[0]))
         else:
             delete_or_insert_data("insert into user_points (point_name, telega_id, score, date) values (?, ?, ?, ?)", (user['check'], message.chat.id, message.text, date.today()))
-    await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_main_menu())
+    await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', 'back_to_users_menu'))
     await state.clear()
 
+
+#------------------------------------------------------------------------------------------------------ЮЗЕР ПРОСМАТРИВАЕТ СВОЙ РЕЙТИНГ------------------------------------------------------------------------------------
+
+# from btns.points_for_edit import points_for_edit
+@router.callback_query(F.data == 'user_rating')
+async def usr_report_process(call: CallbackQuery, bot: Bot):
+    
+    await call.message.answer(f"В настоящий момент Вы на месте", reply_markup=user_main())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
 
 # @router.message(SetConfigsToBot.set_name)
 # async def sss_name(message: Message, state: FSMContext, bot: Bot):
