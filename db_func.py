@@ -39,21 +39,23 @@ data = [
     (9, 'kit', 6293086970, 70, '2024-11-18', 4, 'kit', 1)
 ]
 
-result = []    
-# print(data[len(data)])
-s = 0
-id = 0
-while len(data) > 0:
-    id = data[0][2]
-    print(id)
-    for x in data:
-        if id in x:
-            s = s + (x[3]*x[-1])
-            data.remove(x)
-            print(data)
-    result.append((id, s))
+
+sovpadenie = False
+result = []
+
+for x in data:
+    for z in result:
+        if x[2] in z:
+            sovpadenie = True
+            z[1] = z[1] + (x[3] * x[-1])
+    if sovpadenie == False:
+        result.append([x[2], x[3]])
+    sovpadenie = False
 
 print(result)
+
+
+
 
 # for x in range(len(data)):
 #     try:
