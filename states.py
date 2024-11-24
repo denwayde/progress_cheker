@@ -7,5 +7,7 @@ class SetConfigsToBot(StatesGroup):
     edit_user_names = State()
     set_new_username = State()
     set_points_names = State()
+    set_points_score = State()
+    set_points_min = State()
     set_new_pointname = State()
     set_checkpoint = State()

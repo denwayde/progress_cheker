@@ -9,6 +9,8 @@ from re import fullmatch
 from dotenv import load_dotenv
 from db_func import delete_or_insert_data, insert_many, select_data
 from btns.admin_options import admin_btns
+from btns.back_btn import back_btn
+
 load_dotenv()  # Загрузка переменных из файла .env
 
 router = Router()  # [1]
@@ -122,18 +124,36 @@ async def back_to_main_menu(call: CallbackQuery, bot: Bot):
 @router.callback_query(F.data == 'add_progress_points', StateFilter(None))
 async def usr_stgs(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
-    await call.message.answer(f"Напишите боту названия пунктов прогресса через запятую (если пункт один запятую ставить необязательно).")
+    await call.message.answer(f"Напишите боту название пункта прогресса.")
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
+    await state.set_state(SetConfigsToBot.set_points_score)
+
+
+@router.message(SetConfigsToBot.set_points_score)
+async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
+    await state.update_data(point_name = message.text)
+    await message.answer(f"Напишите боту коэффициент для {message.text}", reply_markup=back_btn("back_to_points_main_menu"))
+    await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
+    await state.set_state(SetConfigsToBot.set_points_min)
+
+
+@router.message(SetConfigsToBot.set_points_min)
+async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
+    await state.update_data(point_score = message.text)
+    score_data = await state.get_data()
+    await message.answer(f"Напишите боту минимум для {score_data['point_name']}, коэффициент которого {message.text}", reply_markup=back_btn("back_to_points_main_menu"))#!!!!!!!!!!!tut knopku nazad k predidushemu hodu nujno budet delat
+    await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
     await state.set_state(SetConfigsToBot.set_points_names)
 
 
 @router.message(SetConfigsToBot.set_points_names)
 async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
-    points_list = [(name.strip(), ) for name in message.text.split(',')]
-    insert_many("INSERT INTO points (name) VALUES(?)", points_list)
+    #points_list = [(name.strip(), ) for name in message.text.split(',')]
+    score_data = await state.get_data()
+    delete_or_insert_data("INSERT INTO points (name, ratio, mins) VALUES(?,?,?)", (score_data['point_name'], score_data['point_score'], message.text, ))
     await state.clear()
-    await message.answer(f"{message.text} был(и) добален(ы)", reply_markup=points_main_menu())
+    await message.answer(f"{score_data['point_name']}, коэффициент - {score_data['point_score']} и минимум - {message.text} был добален", reply_markup=points_main_menu())
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
 
 #------------------------------------------------------------------------------------------------------АДМИН ИЗМЕНЯЕТ ИМЯ ПУНКТОВ ПРОГРЕССА------------------------------------------------------------------------------------
@@ -251,20 +271,45 @@ async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
 # from btns.points_for_edit import points_for_edit
 @router.callback_query(F.data == 'user_rating')
 async def usr_report_process(call: CallbackQuery, bot: Bot):
-    
-    await call.message.answer(f"В настоящий момент Вы на месте", reply_markup=user_main())
+    data = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name")
+    sovpadenie = False
+    result = []
+    for x in data:
+        for z in result:
+            if x[2] in z:
+                sovpadenie = True
+                z[1] = z[1] + (x[3] * x[-2])
+        if sovpadenie == False:
+            result.append([x[2], x[3] * x[-2]])
+        sovpadenie = False
+    sorted_data = sorted(result, key=lambda x: x[1], reverse=True)
+    # Значение, которое мы хотим найти
+    search_id = call.message.chat.id
+    # Поиск элемента и определение индекса
+    index = -1  # Начальное значение, если элемент не найден
+    from_all = len(sorted_data)
+    for i, (id_value, value) in enumerate(sorted_data):
+        if id_value == search_id:
+            index = i
+            break
+    await call.message.answer(f"В настоящий момент Вы на {index+1} месте из {from_all}", reply_markup=user_main())
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
-# @router.message(SetConfigsToBot.set_name)
-# async def sss_name(message: Message, state: FSMContext, bot: Bot):
-#     await correct_password_proccess(message, state, bot, "!!!!!!!!!!!!!!!!!!!!!!!", SetConfigsToBot.set_name)
 
-# from handlers.for_get_name import name_proccessor
-# @router.message(SetConfigsToBot.set_name)
-# async def sss_name(message: Message, state: FSMContext, bot: Bot):
-#     await name_proccessor(message, state, bot, f"Приятно познакомиться, {message.text}. Выберите пожалуйста область зала", SetConfigsToBot.set_place)
+#------------------------------------------------------------------------------------------------------ЮЗЕР ПРОСМАТРИВАЕТ МИНИМУМЫ------------------------------------------------------------------------------------
+@router.callback_query(F.data == 'mins')
+async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
+    data = select_data("SELECT*FROM points")#[(1, 'kkk', 2, 10), (3, 'джф', 1.3, 30), (4, 'kit', 1, 60)]
+    output = ""
+    for x in data:
+        out_el = str(x[1]) + ": " +str(x[-1]) + "\n"
+        output = output + out_el
 
+    #print(output)
+    await call.message.answer(f"Минимумы:\n {output}", reply_markup=user_main())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
 
 
 

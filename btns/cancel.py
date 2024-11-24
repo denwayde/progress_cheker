@@ -1,6 +1,4 @@
-#InlineKeyboardButton(text="Назад", callback_data="back_to_users_menu"))
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardButton
 
 def back_btn_element(where_call):
     # kb = InlineKeyboardBuilder()
@@ -11,6 +9,6 @@ def back_btn_element(where_call):
 def back_btn(data) -> InlineKeyboardMarkup:#editusername_
     kb = InlineKeyboardBuilder()
     buttons = [InlineKeyboardButton(text="Назад", callback_data=data)]
-    kb.add(*buttons)
+    kb.add(*buttons, back_btn)
     kb.adjust(2)
     return kb.as_markup(resize_keyboard=True)
