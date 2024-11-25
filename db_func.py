@@ -39,7 +39,7 @@ for x in data:
     sovpadenie = False
 sorted_data = sorted(result, key=lambda x: x[1], reverse=True)
 
-print(sorted_data)
+#print(sorted_data)
 
 for i, (name, points) in enumerate(sorted_data):
     print(str(i+1) + " " + name + " "+ str(round(points, 2)))

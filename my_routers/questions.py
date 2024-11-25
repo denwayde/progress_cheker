@@ -202,6 +202,28 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await call.answer()
 
+#------------------------------------------------------------------------------------------------------АДМИН ПРОСМАТРИВАЕТ РЕЙТИНГ------------------------------------------------------------------------------------
+@router.callback_query(F.data == 'users_progress')
+async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
+    data = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name INNER JOIN usernames ON user_points.telega_id = usernames.telega_id")
+    sovpadenie = False
+    result = []
+    for x in data:
+        for z in result:
+            if x[10] in z:
+                sovpadenie = True
+                z[1] = z[1] + (x[3] * x[7])
+        if sovpadenie == False:
+            result.append([x[10], x[3] * x[7]])
+        sovpadenie = False
+    sorted_data = sorted(result, key=lambda x: x[1], reverse=True)
+    final_message = ''
+    for i, (name, points) in enumerate(sorted_data):
+        final_message = final_message + str(i+1) + " " + name + " "+ str(round(points, 2)) + "\n"
+    await call.message.answer(final_message, reply_markup=admin_btns())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
 
 
 #------------------------------------------------------------------------------------------------------ЮЗЕР ВЫБИРАЕТ СВОЙ НИКНЕЙМ------------------------------------------------------------------------------------
