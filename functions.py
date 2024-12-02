@@ -14,6 +14,8 @@ def is_date_in_current_week(date_to_check):
     return start_of_week <= date_to_check <= end_of_week
 
 
+
+
 # date_to_check = datetime(2024,11, 6)  # Замените на нужную дату
 # print(date_to_check)
 # if is_date_in_current_week(date_to_check):
