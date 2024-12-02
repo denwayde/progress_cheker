@@ -28,7 +28,6 @@ async def sss_psw(message: Message, state: FSMContext, bot: Bot):
 
 from handlers.for_get_password import if_user
 from btns.weekdays_btns import weekdays, hours, mins
-
 @router.message(SetConfigsToBot.set_name)
 async def set_name(message: Message, state: FSMContext, bot: Bot):
     data = select_data("SELECT name FROM usernames WHERE name = ?", (message.text,))
@@ -46,7 +45,7 @@ from aiogram.types import InlineKeyboardButton
 async def set_firstday(call: CallbackQuery, state: FSMContext, bot: Bot):
     first_day = call.data.split('_')[1]
     await state.update_data(first_day = first_day)
-    await call.message.answer(f"Выбран {first_day}. Выберите до какого дня бот будет напоминать о выполнении отчета. Если напоминать нужно только в один день, то нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays(InlineKeyboardButton(text='Сохранить', callback_data=f"save_dates")))#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    await call.message.answer(f"Выбран {first_day}. Выберите до какого дня бот будет напоминать о выполнении отчета. Если напоминать нужно только в один день, то нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays(InlineKeyboardButton(text='Сохранить', callback_data=f"save_dates")))#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!save_dates
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await state.set_state(SetConfigsToBot.set_notification1)
     await call.answer()
@@ -425,3 +424,18 @@ async def another_proccess(message:Message, bot: Bot):
     await message.answer("Другие возможности", reply_markup=user_main())
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
 
+
+#------------------------------------------------------------------------------------------------------АДМИН ЗАДАЕТ ОПОВЕЩЕНИЯ------------------------------------------------------------------------------------
+from btns.admin_notifations import notifications_btns
+@router.callback_query(F.data == 'admin_notifications')
+async def notification_inial_proccess(call: CallbackQuery, bot: Bot):
+    await call.message.answer('Меню оповещении', reply_markup=notifications_btns())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
+#------------------------------------------------------------------------------------------------------АДМИН ЗАДАЕТ редлайн для пользователей------------------------------------------------------------------------------------
+@router.callback_query(F.data == 'users_notification_redline')
+async def notification_inial_proccess(call: CallbackQuery, bot: Bot):
+    await call.message.answer('Здесь вы задаете время в которое отчет в виде Excel файла будет приходить Вам. ', reply_markup=notifications_btns())!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
