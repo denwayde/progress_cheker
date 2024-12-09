@@ -1,6 +1,6 @@
 from aiogram import Router, F, Bot
 from aiogram.filters import Command
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery, PreCheckoutQuery, ContentType
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import SetConfigsToBot
@@ -10,8 +10,11 @@ from dotenv import load_dotenv
 from db_func import delete_or_insert_data, insert_many, select_data
 from btns.admin_options import admin_btns
 from btns.back_btn import back_btn
+from btns.admin_replybtn import admin_replybtns
 
 load_dotenv()  # Загрузка переменных из файла .env
+admin_id = os.getenv('ADMIN_ID')
+
 
 router = Router()  # [1]
 
@@ -28,17 +31,21 @@ async def sss_psw(message: Message, state: FSMContext, bot: Bot):
 
 from handlers.for_get_password import if_user
 from btns.weekdays_btns import weekdays, hours, mins
-
 @router.message(SetConfigsToBot.set_name)
 async def set_name(message: Message, state: FSMContext, bot: Bot):
     data = select_data("SELECT name FROM usernames WHERE name = ?", (message.text,))
     if data == []:
         #await message.answer('Такого никнейма нет. Проверьте правильность написанияния или обратитесь к администратору')
         await if_user(message, bot, state, 'Такого никнейма нет. Проверьте правильность написанияния или обратитесь к администратору.', SetConfigsToBot.set_name)
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
     else:
-        await message.answer("Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays())
-        await state.update_data(name = message.text)
-        await state.set_state(SetConfigsToBot.set_notification) 
+        #await message.answer("Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays())
+        set_firstday_of_notification(message, state, bot, "Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ")
+
+async def set_firstday_of_notification(message, state, bot, text):
+    await message.answer(text, reply_markup=weekdays())
+    await state.update_data(name = message.text)
+    await state.set_state(SetConfigsToBot.set_notification) 
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
 
 from aiogram.types import InlineKeyboardButton
@@ -46,7 +53,7 @@ from aiogram.types import InlineKeyboardButton
 async def set_firstday(call: CallbackQuery, state: FSMContext, bot: Bot):
     first_day = call.data.split('_')[1]
     await state.update_data(first_day = first_day)
-    await call.message.answer(f"Выбран {first_day}. Выберите до какого дня бот будет напоминать о выполнении отчета. Если напоминать нужно только в один день, то нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays(InlineKeyboardButton(text='Сохранить', callback_data=f"save_dates")))#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    await call.message.answer(f"Выбран {first_day}. Выберите до какого дня бот будет напоминать о выполнении отчета. Если напоминать нужно только в один день, то нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays(InlineKeyboardButton(text='Сохранить', callback_data=f"save_dates")))#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!save_dates
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await state.set_state(SetConfigsToBot.set_notification1)
     await call.answer()
@@ -76,8 +83,18 @@ async def set_mins(call: CallbackQuery, state: FSMContext, bot: Bot):
     minute = call.data.split('_')[1]
     #await state.update_data(minute = minute)
     user_data = await state.get_data()
-    delete_or_insert_data("UPDATE usernames SET telega_id = ?, hour=?, minute=?, period=? WHERE name = ?", (call.message.chat.id, user_data['hour'], minute, f"{user_data['first_day']}-{user_data['second_day']}", user_data['name']))
-    await call.message.answer(f"Выбрано время {user_data['hour']}:{minute}. Настройки бота завершены.", reply_markup=user_replybtns())#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    # print(type(call.message.chat.id))#------------------------------------------integer
+    # print(type(admin_id))#------------------------------------------------------string
+    if call.message.chat.id  == int(admin_id):
+        data = select_data("SELECT * FROM usernames WHERE telega_id = ?", (admin_id,))
+        if data == []:
+            delete_or_insert_data("INSERT INTO usernames (name, telega_id, hour, minute, period) VALUES (?, ?, ?, ?, ?)", ('Admin', call.message.chat.id, user_data['hour'], minute, f"{user_data['first_day']}-{user_data['second_day']}",))
+        else:
+            delete_or_insert_data("UPDATE usernames SET telega_id = ?, hour=?, minute=?, period=? WHERE name = ?", (call.message.chat.id, user_data['hour'], minute, f"{user_data['first_day']}-{user_data['second_day']}", 'admin'))
+        await call.message.answer(f"Выбрано время {user_data['hour']}:{minute}.\nДни оповещений: {user_data['first_day']}-{user_data['second_day']}", reply_markup=admin_replybtns())
+    else:
+        delete_or_insert_data("UPDATE usernames SET telega_id = ?, hour=?, minute=?, period=? WHERE name = ?", (call.message.chat.id, user_data['hour'], minute, f"{user_data['first_day']}-{user_data['second_day']}", user_data['name']))
+        await call.message.answer(f"Выбрано время {user_data['hour']}:{minute}. Настройки бота завершены.", reply_markup=user_replybtns())#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
     await state.clear()
     await call.answer()
@@ -424,4 +441,65 @@ async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
 async def another_proccess(message:Message, bot: Bot):
     await message.answer("Другие возможности", reply_markup=user_main())
     await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
+
+
+#------------------------------------------------------------------------------------------------------АДМИН ЗАДАЕТ ОПОВЕЩЕНИЯ------------------------------------------------------------------------------------
+from btns.admin_notifations import notifications_btns
+@router.callback_query(F.data == 'admin_notifications')
+async def notification_inial_proccess(call: CallbackQuery, bot: Bot):
+    await call.message.answer('Меню оповещении', reply_markup=notifications_btns())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+
+#------------------------------------------------------------------------------------------------------АДМИН ЗАДАЕТ редлайн для пользователей------------------------------------------------------------------------------------
+@router.callback_query(F.data == 'users_notification_redline')
+async def notification_inial_proccess(call: CallbackQuery, bot: Bot, state: FSMContext):
+    await state.clear()
+    await call.message.answer('Здесь вы задаете время в которое отчет в виде Excel файла будет приходить Вам. Для этого давайте отметим время и день напоминия редлайна.\nВыберите пожалуйста ЧАС в который Вам будет приходить напоминание', reply_markup=hours())
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await state.set_state(SetConfigsToBot.set_redline_hour)
+    await call.answer()
+
+@router.callback_query(F.data.startswith('hour_'), SetConfigsToBot.set_redline_hour)
+async def set_redline_hour(call:CallbackQuery, bot: Bot, state: FSMContext):
+    redline_hour = call.data.split('_')[1]
+    await state.update_data(redline_hour = redline_hour)
+    await minutes_dialogue_process(call, bot, state, f'Вы выбрали {redline_hour} час. Выберите пожалуйста МИНУТЫ в которые Вам будет приходить напоминание')
+
+async def minutes_dialogue_process(call, bot, state, msg):
+    await call.message.answer(msg, reply_markup=mins(InlineKeyboardButton(text="Назад", callback_data="users_notification_redline")))
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await call.answer()
+    await state.set_state(SetConfigsToBot.set_redline_day)
+
+@router.callback_query(F.data == "minutes_dialog_proccess")
+async def fff(call: CallbackQuery, bot: Bot, state: FSMContext):
+    await minutes_dialogue_process(call, bot, state, 'Выберите пожалуйста МИНУТЫ в которые Вам будет приходить напоминание')
+
+
+@router.callback_query(F.data.startswith('minute_'), SetConfigsToBot.set_redline_day)
+async def set_redline_minute(call: CallbackQuery, bot: Bot, state: FSMContext):
+    minute = call.data.split('_')[1]
+    await state.update_data(minute = minute)
+    await call.message.answer('Выберите пожалуйста ДЕНЬ в котороый Вам будет приходить напоминание', reply_markup=weekdays(InlineKeyboardButton(text="Назад", callback_data="minutes_dialog_proccess")))
+    await call.answer()
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1, ))
+    await state.set_state(SetConfigsToBot.set_redline_final)
+
+
+from btns.weekdays_btns import back_btn
+@router.callback_query(F.data.startswith('dayofweek_'), SetConfigsToBot.set_redline_final)
+async def set_finally_redline_notification(call: CallbackQuery, bot: Bot, state: FSMContext):
+    redline_day = call.data.split('_')[1]
+    redline_notification = await state.get_data()
+    await call.message.answer(f"Время получения отчета: {redline_notification['redline_hour']}:{redline_notification['minute']}.\nДень получения отчета: {redline_day}.", reply_markup=admin_replybtns())#, reply_markup=back_btn("Назад", f"")
+    delete_or_insert_data("UPDATE admin SET red_hour = ?, red_minute = ?, red_day = ? WHERE telega_id = ?", (redline_notification['redline_hour'], redline_notification['minute'], redline_day, call.message.chat.id))
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    await call.answer()
+    await state.clear()
+
+
+@router.callback_query(F.data == "admin_notifacion")
+async def start_admin_notification(call: CallbackQuery, bot: Bot, state: FSMContext):
+    await set_firstday_of_notification(call.message, state, bot, "Здесь вы можете поставить напоминия о выполненении своего отчета. Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ")
 

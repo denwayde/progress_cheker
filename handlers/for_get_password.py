@@ -1,12 +1,14 @@
 from dotenv import load_dotenv
 import os
-#from btns.admin_options import admin_btns
-from btns.admin_replybtn import admin_replybtns
-from btns.user_options import user_btns
-from states import SetConfigsToBot
 load_dotenv()  # Загрузка переменных из файла .env
 password = os.getenv('PASSWORD')
 admin_id = os.getenv('ADMIN_ID')
+#from btns.admin_options import admin_btns
+from db_func import delete_or_insert_data
+from btns.admin_replybtn import admin_replybtns
+from btns.user_options import user_btns
+from states import SetConfigsToBot
+
 
 async def correct_password_proccess(message, state, bot):
     if message.text == password:
@@ -26,6 +28,7 @@ async def correct_password_proccess(message, state, bot):
 
 async def if_admin(message, state):
     await state.clear()
+    delete_or_insert_data("INSERT INTO admin (name, telega_id) VALUES (?, ?)", ('admin', message.chat.id))
     await message.answer('Добро пожаловать, администратор. Вам доступны следующие опции: Добавление или удаление имен пользователя, пунктов прогресса, минимумов прогресса, времени оповещения Вас, установление времени до которого должны оповестить Вас.\n\nЕсли у Вас возникнут вопросы, обращайтесь к @Dinis_Fizik', reply_markup = admin_replybtns())
     
 

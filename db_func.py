@@ -23,6 +23,10 @@ def insert_many(insertion_query, lst):
     cur.executemany(insertion_query, lst)
     connection.commit()
 
+
+# data = select_data("SELECT * FROM usernames WHERE telega_id = ?", (6293086969,))#[(1, 'цска', 6293086969, '16', '00', 'Воскресенье-Воскресенье')]
+# print(data)
+
 # data =select_data("SELECT name FROM usernames WHERE name = ?", ('jij',)) 
 # print(data)  
 #data0 = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name")

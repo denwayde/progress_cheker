@@ -15,3 +15,6 @@ class SetConfigsToBot(StatesGroup):
     set_notification1 = State()
     set_notification2 = State()
     set_notification_final = State()
+    set_redline_hour = State()
+    set_redline_day = State()
+    set_redline_final = State()
