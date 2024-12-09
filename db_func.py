@@ -24,7 +24,11 @@ def insert_many(insertion_query, lst):
     connection.commit()
 
 
-# data = select_data("SELECT * FROM usernames WHERE telega_id = ?", (6293086969,))#[(1, 'цска', 6293086969, '16', '00', 'Воскресенье-Воскресенье')]
+# data = select_data("SELECT*FROM admin")
+# print(data)
+
+
+# data = select_data("SELECT telega_id FROM usernames WHERE hour IS NOT NULL AND minute IS NOT NULL")#[(1, 'цска', 6293086969, '16', '00', 'Воскресенье-Воскресенье')]
 # print(data)
 
 # data =select_data("SELECT name FROM usernames WHERE name = ?", ('jij',)) 

@@ -4,13 +4,28 @@ from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
 import os
 import my_routers.questions
-
+from schedules import schedule_jobs
 
 load_dotenv()  # Загрузка переменных из файла .env
 
 
 bot_key = os.getenv('BOT_TOKEN')
 # password = os.getenv('PASSWORD')
+
+from aiogram import BaseMiddleware
+
+#нужно установить пакет apscheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+## позволяет доставать scheduler из агрументов фунции
+class SchedulerMiddleware(BaseMiddleware):
+    def __init__(self, scheduler: AsyncIOScheduler):
+        super().__init__()
+        self._scheduler = scheduler
+
+    async def __call__(self,handler,event,data):
+        # прокидываем в словарь состояния scheduler
+        data["scheduler"] = self._scheduler
+        return await handler(event, data)
 
 
 # Запуск бота
