@@ -1,5 +1,4 @@
 async def start_func(message, state, text, new_state, bot):
-    await state.clear()
     await bot.delete_message(message.chat.id, message.message_id)
     await message.answer(text)
     await state.set_state(new_state)

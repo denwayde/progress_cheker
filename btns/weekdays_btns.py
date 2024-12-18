@@ -5,21 +5,29 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 days_of_week = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 
-def weekdays(nazad = None, sohranit=None) -> InlineKeyboardMarkup:
+def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None) -> InlineKeyboardMarkup:
+    days_of_week1 = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+    try:
+        days_of_week1.remove(remove_day)
+    except ValueError:
+        pass
     kb = InlineKeyboardBuilder()
     # kb.button(text="Да")
     # kb.button(text="Нет")
     buttons = []#InlineKeyboardButton(text="Отчет", callback_data="user_report")
-    for x in days_of_week:
+    for x in days_of_week1:
         buttons.append(InlineKeyboardButton(text=x, callback_data=f"dayofweek_{x}"))
     kb.add(*buttons)
     kb.adjust(2)
-    if sohranit != None:    
+    if sohranit != None and nazad == None:    
         kb.row(sohranit)  
-    elif nazad != None:
+    elif nazad != None and sohranit == None:
         kb.row(nazad)
     elif nazad != None and sohranit != None:
-        kb.row(nazad, sohranit)
+        kb.row(nazad)
+        kb.row(sohranit)
+    if otmena!=None:
+        kb.row(otmena)
     return kb.as_markup(resize_keyboard=True)
 
 def hours(nazad = None, sohranit=None) -> InlineKeyboardMarkup:
@@ -30,15 +38,13 @@ def hours(nazad = None, sohranit=None) -> InlineKeyboardMarkup:
     for x in range(1,25):
         buttons.append(InlineKeyboardButton(text=str(x), callback_data=f"hour_{x}"))
     kb.add(*buttons)
-    kb.adjust(2)
-    if sohranit != None:    
-        kb.row(sohranit)
-    elif nazad != None:
+    kb.adjust(3)
+    if sohranit != None and nazad == None:    
+        kb.row(sohranit)  
+    elif nazad != None and sohranit == None:
         kb.row(nazad)
     elif nazad != None and sohranit != None:
         kb.row(nazad, sohranit)
-    
-    
     return kb.as_markup(resize_keyboard=True)
 
 def mins(nazad = None) -> InlineKeyboardMarkup:
@@ -47,12 +53,12 @@ def mins(nazad = None) -> InlineKeyboardMarkup:
     # kb.button(text="Нет")
     buttons = []#InlineKeyboardButton(text="Отчет", callback_data="user_report")
     for x in range(0,60, 5):
-        if x == 0:
-            buttons.append(InlineKeyboardButton(text=f"{x}0", callback_data=f"minute_{x}0"))
+        if x == 0 or x==5:
+            buttons.append(InlineKeyboardButton(text=f"0{x}", callback_data=f"minute_0{x}"))
         else:
             buttons.append(InlineKeyboardButton(text=str(x), callback_data=f"minute_{x}"))
     kb.add(*buttons)
-    kb.adjust(2)
+    kb.adjust(3)
     if nazad != None:
         kb.row(nazad)
     return kb.as_markup(resize_keyboard=True)

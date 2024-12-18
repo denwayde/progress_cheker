@@ -1,14 +1,54 @@
 from openpyxl import Workbook
 from db_func import select_data
+import datetime
+
+def exsel_creator():
+    wb = Workbook()
+    ws = wb.active
+
+    points = select_data("SELECT name FROM points")#[('kkk',), ('джф',), ('kit',), ('hggg',)]
+    usernames = select_data("SELECT name FROM usernames ORDER BY name")
+    users_points = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name INNER JOIN usernames ON user_points.telega_id = usernames.telega_id ORDER BY usernames.name")
+
+    day = datetime.datetime.now().strftime("%Y-%m-%d")
+    # print(users_points)
+
+    just_usenames = [x[0] for x in usernames]
+    just_points = [x[0] for x in points]
+    users = []
+
+    points_release = ["", *just_points, "Сумма", "Сумма c учетом коэффициентов"]
+    ws.append(points_release)
+
+    for x in just_usenames:
+        my_dict = {}
+        my_dict["name"] = x
+        for z in just_points:
+            my_dict[z] = ""
+        my_dict["sum"] = 0
+        my_dict["ksum"] = 0
+        users.append(
+            my_dict
+        )
+    for x in users:
+        for v in users_points:
+            if x['name'] in v:
+                x[v[1]] = v[3]
+                x['sum'] = x['sum'] + v[3]
+                x['ksum'] = x['ksum'] + (v[3]*v[7])
+
+    #[{'name': 'Admin', 'kkk': 12, 'джф': 20, 'kit': 25, 'hggg': 1}, {'name': 'динамо', 'kkk': '', 'джф': '', 'kit': '', 'hggg': ''}, {'name': 'цска', 'kkk': 8, 'джф': 20, 'kit': 40, 'hggg': 2}]
+
+    result = []
+    for x in users:
+        result.append([*x.values()])
+
+    #print(result)
+    for x in result:
+        ws.append(x) 
+
+    wb.save(f"excels/{day}.xlsx")      
 
 
-# wb = Workbook()
-# ws = wb.active
 
-points = select_data("SELECT * FROM points")#[(1, 'kkk', 2, 10), (3, 'джф', 1.3, 30), (4, 'kit', 1, 60), (6, 'hggg', 1.2, 40)]
-#print(points)
-
-data = data = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name INNER JOIN usernames ON user_points.telega_id = usernames.telega_id")
-
-print(data)#[(16, 'kkk', 6293086969, 23, '2024-11-30', 1, 'kkk', 2, 10, 1, 'цска', 6293086969, '17', '00', 'Понедельник-Воскресенье'), (17, 'kit', 6293086969, 12, '2024-12-10', 4, 'kit', 1, 60, 1, 'цска', 6293086969, '17', '00', 'Понедельник-Воскресенье'), (18, 'hggg', 6293086969, 23, '2024-12-10', 6, 'hggg', 1.2, 40, 1, 'цска', 6293086969, '17', '00', 'Понедельник-Воскресенье'), (19, 'kit', 1949640271, 73, '2024-12-10', 4, 'kit', 1, 60, 10, 'Admin', 1949640271, '16', '07', 'Понедельник-Воскресенье'), (20, 'джф', 1949640271, 12, '2024-12-10', 3, 'джф', 1.3, 30, 10, 'Admin', 1949640271, '16', '07', 'Понедельник-Воскресенье'), (21, 'hggg', 1949640271, 12, '2024-12-10', 6, 'hggg', 1.2, 40, 10, 'Admin', 1949640271, '16', '07', 'Понедельник-Воскресенье')]
 
