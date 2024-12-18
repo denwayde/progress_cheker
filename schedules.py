@@ -75,10 +75,10 @@ async def admin_red_alert():
     #scheduler.remove_all_jobs()
     try:
         red_time =  select_data("SELECT red_hour, red_minute, red_day FROM admin")[0]
-        print(red_time)
+        #print(red_time)
     except IndexError:
         red_time = ('21', '00', 'Воскресенье')
-        print(red_time)
+        #print(red_time)
     bot = Bot(token=bot_key)
     minute = zero_cleaner(red_time[1])
     scheduler.add_job(admin_excel_notify, 'cron', day_of_week=days_of_week.index(red_time[2]), hour=int(red_time[0]), minute=int(minute), args=(bot, ))
