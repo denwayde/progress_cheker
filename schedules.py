@@ -27,11 +27,20 @@ def schedule_jobs():
 #     print("Heelo")
 
 async def schedule_for_admins():
+    
     scheduler.remove_all_jobs()
-    admin_data = select_data("SELECT*FROM admin")[0]#[(1, 'admin', 1949640271, '11', '30', 'Среда')]
+    try:
+        admin_data = select_data("SELECT*FROM admin")[0]#[(1, 'admin', 1949640271, '11', '30', 'Среда')]   
+    except IndexError:
+        return False
+    
     user_data = select_data("SELECT telega_id FROM usernames WHERE hour IS NOT NULL AND minute IS NOT NULL")#[(6293086969,), (1949640271,)]
+
     redtime_str = f"{admin_data[3]}:{admin_data[4]}"
-    arr_to_notify = time_corrector(redtime_str)
+    try:
+        arr_to_notify = time_corrector(redtime_str)
+    except ValueError:
+        return False
     
     #scheduler.add_job(admin_notify, 'cron', day_of_week=str(days_of_week.index(admin_data[5])), hour=arr_to_notify[0], minute=arr_to_notify[1], args=(message, state, bot, x[2], redtime_str))
     for x in user_data:

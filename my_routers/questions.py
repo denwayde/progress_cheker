@@ -30,7 +30,7 @@ async def cmd_start(message: Message, state: FSMContext, bot: Bot):
            await message.answer("⚔⚔⚔", reply_markup=admin_replybtns())
         else:
            await message.answer("🚀🛸🛰", reply_markup=user_replybtns())
-
+    await bot.delete_message(message.chat.id, message.message_id)
 
 from handlers.for_get_password import correct_password_proccess
 @router.message(SetConfigsToBot.set_password)
@@ -41,14 +41,19 @@ from handlers.for_get_password import if_user
 from btns.weekdays_btns import weekdays, hours, mins
 @router.message(SetConfigsToBot.set_name)
 async def set_name(message: Message, state: FSMContext, bot: Bot):
-    data = select_data("SELECT name FROM usernames WHERE name = ?", (message.text,))
-    if data == []:
-        #await message.answer('Такого никнейма нет. Проверьте правильность написанияния или обратитесь к администратору')
-        await if_user(message, bot, state, 'Такого никнейма нет. Проверьте правильность написанияния или обратитесь к администратору.', SetConfigsToBot.set_name)
+    isusers_exist = select_data("SELECT name FROM usernames")
+    if isusers_exist == []:
+        await message.answer("Администратор еще не задал имена")
         await bot.delete_messages(message.chat.id, (message.message_id-1, ))
     else:
-        #await message.answer("Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays())
-        await set_firstday_of_notification(message, state, bot, "Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ")
+        data = select_data("SELECT name FROM usernames WHERE name = ?", (message.text,))
+        if data == [] or message.text == 'Admin':
+            #await message.answer('Такого никнейма нет. Проверьте правильность написанияния или обратитесь к администратору')
+            await if_user(message, bot, state, 'Такого никнейма нет. Проверьте правильность написанияния и попробуйте повторить ввод. Если после многократного ввода вы не оказались на следующем шаге авторизации, обратитесь к администратору.', SetConfigsToBot.set_name)
+            await bot.delete_messages(message.chat.id, (message.message_id-1, ))
+        else:
+            #await message.answer("Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ", reply_markup=weekdays())
+            await set_firstday_of_notification(message, state, bot, "Отлично! Выберите с какого дня недели бот будет напоминать о выполнении отчета. Если день один то выберите день, а на следующем этапе нажмите кнопку СОХРАНИТЬ")
 
 
 
@@ -142,7 +147,7 @@ async def set_mins(call: CallbackQuery, state: FSMContext, bot: Bot):
 
 async def notificationtime_saver(call, state, bot):
     user_data = await state.get_data()
-
+    print(user_data)
     try:
         minute = user_data["minute"]
     except KeyError:
@@ -161,7 +166,7 @@ async def notificationtime_saver(call, state, bot):
             delete_or_insert_data("UPDATE usernames SET telega_id = ?, hour=?, minute=?, period=? WHERE name = ?", (call.message.chat.id, user_data['hour'], minute, f"{period}", 'Admin'))
         await call.message.answer(f"Выбрано время {user_data['hour']}:{minute}.\nДни оповещений: {period}", reply_markup=admin_replybtns())
     else:
-        #print(user_data['name'])
+        print(user_data['name'])
         if user_data['name'] == "Другие возможности":#----------------------------------------------------- !!! TUT VOZMOJENi OSHIBKI !!! --------------------------------------
             delete_or_insert_data("UPDATE usernames SET hour=?, minute=?, period=? WHERE telega_id = ?", (user_data['hour'], minute, f"{period}", call.message.chat.id, ))
         else:
@@ -215,6 +220,9 @@ from btns.users_for_edit import users_for_edit
 @router.callback_query(F.data == 'edit_user')
 async def usr_stgs_edit(call: CallbackQuery, bot: Bot):
     usernames = select_data("SELECT name FROM usernames")#[('цска',), ('динамо',), ('Admin',), ('Барселона',)]
+    for x in usernames:
+        if x[0] == 'Admin':
+            usernames.remove(x)
     if usernames == []:
         await call.message.answer("Список пользователей пуст", reply_markup=back_btn('⬅Назад', 'users'))
     else:
@@ -246,6 +254,9 @@ async def new_usrname(message: Message, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == 'delete_user')
 async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
     usernames = select_data("SELECT name FROM usernames")#[('цска',), ('динамо',), ('Admin',), ('Барселона',)]
+    for x in usernames:
+        if x[0] == 'Admin':
+            usernames.remove(x)
     if usernames == []:
         await call.message.answer("Список пользователей пуст", reply_markup=back_btn('⬅Назад', 'users'))
     else:
@@ -272,9 +283,9 @@ async def back_to_main_menu(call: CallbackQuery, bot: Bot):
 
 @router.message(F.text == "Администрация")
 async def admin_menu_proccess(message: Message, state: FSMContext, bot: Bot):
-    await state.clear()
-    await message.answer("Главное меню администратора", reply_markup=admin_btns())
-    # await message.answer("", reply_markup=admin_replybtns())
+    if message.chat.id == int(admin_id):
+        await message.answer("Главное меню администратора", reply_markup=admin_btns())
+    await state.clear() 
     await bot.delete_messages(message.chat.id, (message.message_id, ))
     #await bot.delete_messages(message.chat.id, (message.message_id-1, ))
 
@@ -346,7 +357,7 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
 
 async def set_score_topoint(message, bot, state, text):
     await message.answer(f"Напишите боту коэффициент для {text}, в виде (2 или 1.2)", reply_markup=back_btn("Назад","back_to_points_main_menu"))
-    await bot.delete_messages(message.chat.id, (message.message_id-1, ))
+    await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
     await state.set_state(SetConfigsToBot.set_points_min)
 
 
@@ -368,7 +379,7 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
     else:
         await message.answer(f"Введено невалидное значение коэффициента, пожалуйста повторите ввод", reply_markup=back_btn("Назад", "add_progress_points"))
         await state.set_state(SetConfigsToBot.set_points_min)
-    await bot.delete_messages(message.chat.id, (message.message_id-1, ))
+    await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
 
 
 # @router.callback_query(F.data == "back_to_set_min")
@@ -394,17 +405,17 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
             min = message.text.replace(",", ".").replace(" ", "")
         score_data = await state.get_data()
 
-        print(score_data['edit_pointname'])
+        #print(score_data['edit_pointname'])
 
-        if score_data['edit_pointname'] != None:
+        try:
             delete_or_insert_data("UPDATE points SET name = ?, ratio = ?, mins = ? WHERE name = ?", (score_data['point_name'], score_data['point_score'], min, score_data['edit_pointname'], ))
-        else:
+        except KeyError:
             delete_or_insert_data("INSERT INTO points (name, ratio, mins) VALUES(?,?,?)", (score_data['point_name'], score_data['point_score'], min, ))
         await state.clear()
         await message.answer(f"{score_data['point_name']}, коэффициент - {score_data['point_score']} и минимум - {min} был добален", reply_markup=points_main_menu())
     else:
         await message.answer("Введено невалидное значение минимума, пожалуйста повторите ввод", reply_markup=back_btn("Назад", "back_to_set_min"))
-    await bot.delete_messages(message.chat.id, (message.message_id-1, ))
+    await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
 
 #------------------------------------------------------------------------------------------------------АДМИН ИЗМЕНЯЕТ ИМЯ ПУНКТОВ ПРОГРЕССА------------------------------------------------------------------------------------
 from btns.points_for_edit import points_for_edit
@@ -465,6 +476,7 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
 @router.callback_query(F.data == 'users_progress')
 async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
     data = select_data("SELECT* FROM user_points INNER JOIN points ON points.name = user_points.point_name INNER JOIN usernames ON user_points.telega_id = usernames.telega_id")
+    #progress_points = select_data("SELECT*FROM user_points")
     if data == []:
         await call.message.answer("Пока прогресс пользователей пуст", reply_markup=admin_btns())
     else:
@@ -531,7 +543,9 @@ async def usr_report_process(call: CallbackQuery, bot: Bot):
 import re
 @router.message(lambda message: re.search(r"^(Отчет|Мой отчет)$", message.text))
 async def report_message_handler(message: Message, bot: Bot):
-    await handle_usr_report(message.chat.id, message.message_id, bot)
+    user = select_data("SELECT * FROM usernames WHERE telega_id = ?", (message.chat.id,))
+    if user != []:
+        await handle_usr_report(message.chat.id, message.message_id, bot)
 
 
 
@@ -557,7 +571,7 @@ async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
             score = score.replace(",", ".")
         #await state.clear()
         user = await state.get_data()
-        await bot.delete_messages(message.chat.id, (message.message_id, ))
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
         last_user_point_record_list = select_data("SELECT* FROM user_points WHERE point_name = ? AND telega_id = ? ORDER BY id DESC LIMIT 1", (user['check'], message.chat.id,))#(2, 'kkk', 6293086969, 6, '2024-11-06')
         #print(last_user_point_record_list)
         if last_user_point_record_list == []:
@@ -567,15 +581,18 @@ async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
             new_score = int(last_user_point_record_list[3]) + int(score)
             delete_or_insert_data("UPDATE user_points SET score = ?, date = ? WHERE id = ?", (new_score, date.today(), last_user_point_record_list[0])) 
         if message.chat.id == int(admin_id):
-            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', 'Назад', 'back_to_main_menu'))
+            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_main_menu'))
         else:      
-            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', 'Назад', 'back_to_users_menu'))
+            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_users_menu'))
         await state.clear()
     else:
         await message.answer("Вы ввели невалидное значение. Внесите числовое значение.")
         await state.set_state(SetConfigsToBot.set_checkpoint)
         
-    
+#--------------------------------------------------------------------------------------Измение только выставленного поинта----------------------------------------------------------
+@router.callback_query(F.data == 'change_checkedpoint')
+async def change_justadded_checkpoint(call: CallbackQuery, state: FSMContext, bot: Bot):
+    pass
 
 
 #------------------------------------------------------------------------------------------------------ЮЗЕР ПРОСМАТРИВАЕТ СВОЙ РЕЙТИНГ--------------------------------------------------------
@@ -632,7 +649,9 @@ async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
 
 @router.message(F.text == "Остальное")
 async def another_proccess(message:Message, bot: Bot):
-    await anotherfunc_proccess(message, bot)
+    user = select_data("SELECT * FROM usernames WHERE telega_id = ?", (message.chat.id,))
+    if user != []:
+        await anotherfunc_proccess(message, bot)
     #await bot.delete_messages(message.chat.id, (message.message_id-1, ))
 
 
