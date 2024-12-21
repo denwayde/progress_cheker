@@ -5,6 +5,7 @@ import os
 import excel_creator
 from aiogram.types import FSInputFile
 from btns.admin_replybtn import admin_replybtns
+import asyncio
 
 load_dotenv() 
 bot_key = os.getenv('BOT_TOKEN')
@@ -32,6 +33,8 @@ async def schedule_for_admins():
     try:
         admin_data = select_data("SELECT*FROM admin")[0]#[(1, 'admin', 1949640271, '11', '30', 'Среда')]   
     except IndexError:
+        schedule_jobs()
+        await asyncio.sleep(5)
         return False
     
     user_data = select_data("SELECT telega_id FROM usernames WHERE hour IS NOT NULL AND minute IS NOT NULL")#[(6293086969,), (1949640271,)]
@@ -40,6 +43,8 @@ async def schedule_for_admins():
     try:
         arr_to_notify = time_corrector(redtime_str)
     except ValueError:
+        schedule_jobs()
+        await asyncio.sleep(5)
         return False
     
     #scheduler.add_job(admin_notify, 'cron', day_of_week=str(days_of_week.index(admin_data[5])), hour=arr_to_notify[0], minute=arr_to_notify[1], args=(message, state, bot, x[2], redtime_str))

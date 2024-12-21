@@ -581,18 +581,20 @@ async def edit_checkpoint_result(message: Message, state: FSMContext, bot: Bot):
             new_score = int(last_user_point_record_list[3]) + int(score)
             delete_or_insert_data("UPDATE user_points SET score = ?, date = ? WHERE id = ?", (new_score, date.today(), last_user_point_record_list[0])) 
         if message.chat.id == int(admin_id):
-            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_main_menu'))
+            await message.answer(f"Ваша отметка {score} на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_main_menu', data = f"{score}_{user['check']}"))
         else:      
-            await message.answer(f"Ваша отметка на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_users_menu'))
+            await message.answer(f"Ваша отметка {score} на {user['check']} выставлена", reply_markup=points_for_edit('checkpoint_', '⬅ Назад', 'back_to_users_menu', data = f"{score}_{user['check']}"))
         await state.clear()
     else:
         await message.answer("Вы ввели невалидное значение. Внесите числовое значение.")
         await state.set_state(SetConfigsToBot.set_checkpoint)
         
 #--------------------------------------------------------------------------------------Измение только выставленного поинта----------------------------------------------------------
-@router.callback_query(F.data == 'change_checkedpoint')
+@router.callback_query(F.data.startwith('changecheckedpoint_'), StateFilter(None))
 async def change_justadded_checkpoint(call: CallbackQuery, state: FSMContext, bot: Bot):
-    pass
+    #print(call.data)
+    await call.message.answer(str(call.data.split("_")))
+    await call.answer()
 
 
 #------------------------------------------------------------------------------------------------------ЮЗЕР ПРОСМАТРИВАЕТ СВОЙ РЕЙТИНГ--------------------------------------------------------
