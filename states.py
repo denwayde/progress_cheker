@@ -18,3 +18,4 @@ class SetConfigsToBot(StatesGroup):
     set_redline_hour = State()
     set_redline_day = State()
     set_redline_final = State()
+    set_changecheckpoint = State()

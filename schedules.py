@@ -17,49 +17,49 @@ scheduler = AsyncIOScheduler(timezone = "Asia/Yekaterinburg")
 
 days_of_week = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
-def schedule_jobs():
+def schedule_jobs(bot: Bot):
     # scheduler.remove_all_jobs()
     #scheduler.add_job(schedule_for_users, 'interval', seconds = 30)
     #scheduler.add_job(hello, 'interval', seconds = 30)
-    scheduler.add_job(schedule_for_admins, 'interval', seconds = 30)
+    scheduler.add_job(schedule_for_admins, 'interval', minutes = 10, args=(bot, ))
     #scheduler.add_job(admin_red_alert, 'interval', seconds = 30)
 
 # async def hello():
 #     print("Heelo")
 
-async def schedule_for_admins():
+async def schedule_for_admins(bot: Bot):
     
     scheduler.remove_all_jobs()
     try:
         admin_data = select_data("SELECT*FROM admin")[0]#[(1, 'admin', 1949640271, '11', '30', 'Среда')]   
     except IndexError:
-        schedule_jobs()
-        await asyncio.sleep(5)
-        return False
-    
+        schedule_jobs(bot)
+        await asyncio.sleep(1)
+        return False    
     user_data = select_data("SELECT telega_id FROM usernames WHERE hour IS NOT NULL AND minute IS NOT NULL")#[(6293086969,), (1949640271,)]
 
     redtime_str = f"{admin_data[3]}:{admin_data[4]}"
     try:
         arr_to_notify = time_corrector(redtime_str)
     except ValueError:
-        schedule_jobs()
-        await asyncio.sleep(5)
+        schedule_jobs(bot)
+        await asyncio.sleep(1)
         return False
     
     #scheduler.add_job(admin_notify, 'cron', day_of_week=str(days_of_week.index(admin_data[5])), hour=arr_to_notify[0], minute=arr_to_notify[1], args=(message, state, bot, x[2], redtime_str))
     for x in user_data:
-        bot = Bot(token=bot_key)
+        #bot = Bot(token=bot_key)
         minute = zero_cleaner(arr_to_notify[1])
         scheduler.add_job(redday_notify, 'cron', day_of_week=str(days_of_week.index(admin_data[5])), hour=arr_to_notify[0], minute=minute, args=(bot, x[0], redtime_str))
     
-    await schedule_for_users()
-    await admin_red_alert()
-    schedule_jobs()
+    await schedule_for_users(bot)
+    await admin_red_alert(bot)
+    schedule_jobs(bot)
 
 
-async def schedule_for_users():
+async def schedule_for_users(bot: Bot):
     #scheduler.remove_all_jobs()
+    days_of_week2 = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
     data = select_data("SELECT*FROM usernames")#[(1, 'цска', 6293086969, '16', '00', 'Воскресенье-Воскресенье'), (2, 'динамо', None, None, None, None), (10, 'Admin', 1949640271, '9', '00', 'Понедельник-Воскресенье')]
     #print(data)
     for x in data:
@@ -67,10 +67,13 @@ async def schedule_for_users():
             #x[5] - den nedeli ('Воскресенье-Воскресенье')
             try:
                 period_arr_str = x[5].split('-')
-                period_str_int = f"{days_of_week.index(period_arr_str[0])}-{days_of_week.index(period_arr_str[1])}"
+                if days_of_week2.index(period_arr_str[0])>days_of_week2.index(period_arr_str[1]):
+                    period_str_int = f"{days_of_week2.index(period_arr_str[1])}-{days_of_week2.index(period_arr_str[0])}"
+                else:
+                    period_str_int = f"{days_of_week2.index(period_arr_str[0])}-{days_of_week2.index(period_arr_str[1])}"
             except IndexError:
-                period_str_int = f"{days_of_week.index(x[5])}"      
-            bot = Bot(token=bot_key)
+                period_str_int = f"{days_of_week2.index(x[5])}"      
+            #bot = Bot(token=bot_key)
             minute = zero_cleaner(x[4])
             scheduler.add_job(noon_print, 'cron', day_of_week=period_str_int, hour=x[3], minute=minute, args=(bot, x[2]))
 
@@ -80,12 +83,15 @@ async def schedule_for_users():
 from btns.users_replybtn import user_replybtns
 from btns.admin_replybtn import admin_replybtns 
 
-async def noon_print(bot: Bot, chat_id):    
-    await bot.send_message(chat_id, "Отправьте пожалуйста отчет по прогрессам.",reply_markup=user_replybtns())
+async def noon_print(bot: Bot, chat_id):
+    if chat_id == int(admin_id):
+        await bot.send_message(chat_id, "Отправьте пожалуйста отчет по прогрессам.", reply_markup=admin_replybtns())
+    else:
+        await bot.send_message(chat_id, "Отправьте пожалуйста отчет по прогрессам.", reply_markup=user_replybtns())
     #await message.answer("Отправьте пожалуйста отчет по прогрессам.", reply_markup=user_replybtns)
     
 
-async def admin_red_alert():
+async def admin_red_alert(bot):
     #scheduler.remove_all_jobs()
     try:
         red_time =  select_data("SELECT red_hour, red_minute, red_day FROM admin")[0]
@@ -93,7 +99,7 @@ async def admin_red_alert():
     except IndexError:
         red_time = ('21', '00', 'Воскресенье')
         #print(red_time)
-    bot = Bot(token=bot_key)
+    #bot = Bot(token=bot_key)
     minute = zero_cleaner(red_time[1])
     scheduler.add_job(admin_excel_notify, 'cron', day_of_week=days_of_week.index(red_time[2]), hour=int(red_time[0]), minute=int(minute), args=(bot, ))
 

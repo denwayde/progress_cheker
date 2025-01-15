@@ -36,7 +36,7 @@ async def main():
     dp = Dispatcher()
     dp.include_router(my_routers.questions.router)
     scheduler.start()
-    schedule_jobs()
+    schedule_jobs(bot)
     # Запускаем бота и пропускаем все накопленные входящие
     # Да, этот метод можно вызвать даже если у вас поллинг
     await bot.delete_webhook(drop_pending_updates=True)

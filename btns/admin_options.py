@@ -13,8 +13,8 @@ def admin_btns() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Excel отчет", callback_data="excel_report"),
         InlineKeyboardButton(text="Пункты", callback_data="points"),
         InlineKeyboardButton(text="Пользователи", callback_data="users"),
-        InlineKeyboardButton(text="Оповещения", callback_data="admin_notifications")#InlineKeyboardButton(text="Время сдачи", callback_data="red_line"),
-
+        InlineKeyboardButton(text="Оповещения", callback_data="admin_notifications"),#InlineKeyboardButton(text="Время сдачи", callback_data="red_line"),
+        InlineKeyboardButton(text="Отчистить прогресс", callback_data="deleteprogress_menu"),
     ]
     # buttons = [
     #     KeyboardButton(text="Прогресс пользователей", callback_data="users_progress"),
