@@ -110,6 +110,11 @@ for name in usernames:
 print(pred_result)
 
 
+for x in pred_result:
+    for day in week_dates_str:
+        if day in x:
+            for point_name in points:
+                
 
 
 
