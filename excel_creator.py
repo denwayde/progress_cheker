@@ -3,6 +3,30 @@ from db_func import select_data, select_data_dict, select_data_single
 # import datetime
 from datetime import datetime, timedelta
 
+def exsel_creator():
+    import openpyxl
+    # Создаем новую рабочую книгу
+    workbook = openpyxl.Workbook()
+    # Добавляем новый лист
+    sheet1 = workbook.active  # по умолчанию уже есть активный лист
+    sheet1.title = "Лист 1"  # переименовываем лист
+    # Вставляем данные в Лист 1
+    sheet1['A1'] = "Привет"
+    sheet1['A2'] = "Мир"
+    # Создаем еще один лист
+    sheet2 = workbook.create_sheet(title="Лист 2")
+    # Вставляем данные в Лист 2
+    sheet2['A1'] = "Это второй лист"
+    sheet2['A2'] = "С данным!"
+    # Создаем третий лист
+    sheet3 = workbook.create_sheet(title="Лист 3")
+    # Вставляем данные в Лист 3
+    sheet3['A1'] = "Лист 3"
+    sheet3['A2'] = "Еще данные"
+    # Сохраняем рабочую книгу
+    workbook.save("example.xlsx")
+
+
 def result_total():
     # wb = Workbook()
     # ws = wb.active
@@ -81,6 +105,59 @@ def result_weekly():
     for x in pred_result:
         result.append([*x.values()])    #tut vmesto novogo cikla luche srazu sdelat ws.append([*x.values()])
     return result
+
+
+def womans_report():
+    today = datetime.now()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    week_dates = [monday + timedelta(days=i) for i in range(7)]
+
+    # Преобразуем даты в строки для удобного отображения (опционально)
+    sqldata1 = select_data_dict("SELECT usernames.name, userpoints_weekly.point_name, SUM(userpoints_weekly.point_score) AS total_point_score, (SUM(userpoints_weekly.point_score) * points.ratio) AS total_point_score_with_koef, CASE WHEN COUNT(DISTINCT userpoints_weekly.date) = 7 THEN (SUM(userpoints_weekly.point_score) * points.ratio + points.bonus) END AS bonus_score FROM userpoints_weekly INNER JOIN usernames ON userpoints_weekly.telega_id = usernames.telega_id INNER JOIN points ON points.name = userpoints_weekly.point_name WHERE date BETWEEN ? AND ? GROUP BY usernames.name,  userpoints_weekly.point_name", (monday.date(), sunday.date(), ))
+
+    sqldata2 = select_data_dict("SELECT usernames.name, userpoints_weekly.point_name, userpoints_weekly.date, userpoints_weekly.point_score, points.ratio FROM userpoints_weekly INNER JOIN usernames ON userpoints_weekly.telega_id = usernames.telega_id INNER JOIN points ON points.name = userpoints_weekly.point_name WHERE date BETWEEN ? AND ?", (monday.date(), sunday.date(), ))
+
+    week_dates_str = [date.strftime('%Y-%m-%d') for date in week_dates]
+    points = select_data_single("SELECT name FROM points")
+    usernames = select_data_single("SELECT name FROM usernames ORDER BY name")
+    pred_result = []
+    result = []
+
+    for username in usernames:
+        my_dict = {}
+        my_dict['username'] = username
+        for point in points:
+            my_dict[point] = {}
+            for week_day in week_dates_str:
+                my_dict[point][week_day] = 0
+            my_dict[point]["Сумма"] = 0
+            my_dict[point]["Сумма с коэффициентом"] = 0
+            my_dict[point]["Сумма с бонусом"] = 0
+        pred_result.append(my_dict)
+            
+    for row in sqldata2:
+        for result_row in pred_result:
+            if result_row['username'] == row['name']:
+                result_row[row['point_name']][row['date']] += row['point_score']
+    for summs in sqldata1:
+        for result_row in pred_result:
+            if result_row['username'] == summs['name']:
+                result_row[summs['point_name']]["Сумма"] = summs['total_point_score']
+                result_row[summs['point_name']]["Сумма с коэффициентом"] = summs['total_point_score_with_koef']
+                result_row[summs['point_name']]["Сумма с бонусом"] = summs['bonus_score']
+
+    for res in pred_result:
+        heading = [res['username'], *week_dates_str, "Сумма", "Сумма с коэффициентом", "Сумма с бонусом"]
+        result.append(heading)
+        for point in points:
+            row = []
+            row = [point, *res[point].values()]
+            result.append(row)
+        result.append([])
+        result.append([])
+    return result
+
 
 # print(result_weekly())
 #print(result_total())

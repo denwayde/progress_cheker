@@ -61,101 +61,112 @@ def insert_many(insertion_query, lst):
 # dic = [dict(row) for row in sqldata]
 # print(dic)
 
-from datetime import datetime, timedelta
-
-# Получаем текущую дату
-today = datetime.now()
-
-# Находим первый день недели (понедельник)
-monday = today - timedelta(days=today.weekday())
-sunday = monday + timedelta(days=6)
-# Создаем массив дат этой недели
-week_dates = [monday + timedelta(days=i) for i in range(7)]
-
-# Преобразуем даты в строки для удобного отображения (опционально)
-
-sqldata = select_data_dict("SELECT * FROM userpoints_weekly INNER JOIN usernames ON userpoints_weekly.telega_id = usernames.telega_id INNER JOIN points ON points.name = userpoints_weekly.point_name WHERE date BETWEEN ? AND ?", (monday.date(), sunday.date(), ))
-
-sqldata1 = select_data_dict("SELECT usernames.name, userpoints_weekly.point_name, COUNT(DISTINCT userpoints_weekly.date) AS date_count, SUM(userpoints_weekly.point_score) AS total_point_score FROM userpoints_weekly INNER JOIN usernames ON userpoints_weekly.telega_id = usernames.telega_id INNER JOIN points ON points.name = userpoints_weekly.point_name WHERE date BETWEEN ? AND ? GROUP BY usernames.name,  userpoints_weekly.point_name", (monday.date(), sunday.date(), ))
-
-data1 = [
-    {'name': 'Admin', 'point_name': 'djf', 'date_count': 1, 'total_point_score': 11}, 
-    {'name': 'Admin', 'point_name': 'qq', 'date_count': 2, 'total_point_score': 44}, 
-    {'name': 'dd', 'point_name': 'djf', 'date_count': 1, 'total_point_score': 11}, 
-    {'name': 'dd', 'point_name': 'ффф', 'date_count': 1, 'total_point_score': 11}
-    ]
 
 
-# dic = [dict(row) for row in sqldata1]
-# print(dic)
+# result = [
+#         ['Admin', '2025-01-20', '2025-01-21', '2025-01-22', '2025-01-23', '2025-01-24', '2025-01-25', '2025-01-26', 'Сумма', 'Сумма с коэффициентом', 'Сумма с бонусом'], 
+#         ['qq', 22, 22, 11, 11, 11, 11, 22, 110, 330, 350], 
+#         ['djf', 0, 11, 0, 0, 0, 0, 0, 11, 22, None], 
+#         ['ввв', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+#         ['ффф', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+#         [], [], 
+#         ['dd', '2025-01-20', '2025-01-21', '2025-01-22', '2025-01-23', '2025-01-24', '2025-01-25', '2025-01-26', 'Сумма', 'Сумма с коэффициентом', 'Сумма с бонусом'], 
+#         ['qq', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+#         ['djf', 0, 11, 0, 0, 0, 0, 0, 11, 22, None], 
+#         ['ввв', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+#         ['ффф', 0, 11, 0, 0, 0, 0, 0, 11, 22, None], 
+#         [], []
+#     ]
+
+# pred_result1 = [
+#         {
+#             'username': 'Admin', 
+#             'qq': {'2025-01-20': 22, '2025-01-21': 22, '2025-01-22': 11, '2025-01-23': 11, '2025-01-24': 11, '2025-01-25': 11, '2025-01-26': 22, 'Сумма': 110, 'Сумма с коэффициентом': 330, 'Сумма с бонусом': 350}, 
+#             'djf': {'2025-01-20': 0, '2025-01-21': 11, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 11, 'Сумма с коэффициентом': 22, 'Сумма с бонусом': None}, 
+#             'ввв': {'2025-01-20': 0, '2025-01-21': 0, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 0, 'Сумма с коэффициентом': 0, 'Сумма с бонусом': 0}, 
+#             'ффф': {'2025-01-20': 0, '2025-01-21': 0, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 0, 'Сумма с коэффициентом': 0, 'Сумма с бонусом': 0}
+#         }, 
+#         {
+#             'username': 'dd', 
+#             'qq': {'2025-01-20': 0, '2025-01-21': 0, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 0, 'Сумма с коэффициентом': 0, 'Сумма с бонусом': 0}, 
+#             'djf': {'2025-01-20': 0, '2025-01-21': 11, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 11, 'Сумма с коэффициентом': 22, 'Сумма с бонусом': None}, 
+#             'ввв': {'2025-01-20': 0, '2025-01-21': 0, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 0, 'Сумма с коэффициентом': 0, 'Сумма с бонусом': 0}, 
+#             'ффф': {'2025-01-20': 0, '2025-01-21': 11, '2025-01-22': 0, '2025-01-23': 0, '2025-01-24': 0, '2025-01-25': 0, '2025-01-26': 0, 'Сумма': 11, 'Сумма с коэффициентом': 22, 'Сумма с бонусом': None}
+#         }
+# ]
+
+# expected_result = [
+#     ['dd', '20.01','21.01','22.01', 'summa', 'summa s koeff', 'summa s bonusom'],
+#     ['kit', 20, 21, 22, 63, 43, 73],
+#     ['qq', 12, 13, 14, 63, 43, 73],
+#     ['djf', 20, 22, 24, 63, 43, 73]
+# ]
 
 
-week_dates_str = [date.strftime('%Y-%m-%d') for date in week_dates]
-points = select_data_single("SELECT name FROM points")
-usernames = select_data_single("SELECT name FROM usernames ORDER BY name")
 
 
+# data = [
+#     {'id': 12, 'point_name': 'qq', 'telega_id': 6293086969, 'point_score': 11, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10},
+#     {'id': 16, 'point_name': 'qq', 'telega_id': 6293086969, 'point_score': 12, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10}, 
+#     {'id': 13, 'point_name': 'djf', 'telega_id': 6293086969, 'point_score': 21, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 2, 'mins': 30}, 
+#     {'id': 14, 'point_name': 'qq', 'telega_id': 1949640271, 'point_score': 10, 'date': '2025-01-20', 'name': 'Admin', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10},
+#     {'id': 15, 'point_name': 'djf', 'telega_id': 1949640271, 'point_score': 20, 'date': '2025-01-20', 'name': 'Admin', 'hour': None, 'minute': None, 'period': None, 'ratio': 2, 'mins': 30}
+#     ]
 
-
-pred_result = []
-
-data = [
-    {'id': 12, 'point_name': 'qq', 'telega_id': 6293086969, 'point_score': 11, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10},
-    {'id': 16, 'point_name': 'qq', 'telega_id': 6293086969, 'point_score': 12, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10}, 
-    {'id': 13, 'point_name': 'djf', 'telega_id': 6293086969, 'point_score': 21, 'date': '2025-01-20', 'name': 'dd', 'hour': None, 'minute': None, 'period': None, 'ratio': 2, 'mins': 30}, 
-    {'id': 14, 'point_name': 'qq', 'telega_id': 1949640271, 'point_score': 10, 'date': '2025-01-20', 'name': 'Admin', 'hour': None, 'minute': None, 'period': None, 'ratio': 1, 'mins': 10},
-    {'id': 15, 'point_name': 'djf', 'telega_id': 1949640271, 'point_score': 20, 'date': '2025-01-20', 'name': 'Admin', 'hour': None, 'minute': None, 'period': None, 'ratio': 2, 'mins': 30}
-    ]
-
-for name in usernames:
-    # print(name)
-    dd = {name: ''}
+# for name in usernames:
+#     # print(name)
+#     dd = {name: ''}
     
-    for week_day in week_dates_str:
-        dp = {}
-        for point in points:
-            dp[point] = 0
-        for data_element in data:
-            # print(f"{week_day} == {data_element['date']} and {name} == {data_element['name']}")
-            # print(week_day == data_element['date'])
-            if name == data_element['name'] and week_day == data_element['date']:
-                dp[data_element['point_name']] += data_element['point_score']
-            #     print(dp)
-            # print()
-        dd[week_day] = dp 
-        # print(dd)   
-    pred_result.append(dd)
+#     for week_day in week_dates_str:
+#         dp = {}
+#         for point in points:
+#             dp[point] = 0
+#         for data_element in data:
+#             # print(f"{week_day} == {data_element['date']} and {name} == {data_element['name']}")
+#             # print(week_day == data_element['date'])
+#             if name == data_element['name'] and week_day == data_element['date']:
+#                 dp[data_element['point_name']] += data_element['point_score']
+#             #     print(dp)
+#             # print()
+#         dd[week_day] = dp 
+#         # print(dd)   
+#     pred_result.append(dd)
 
-#print(pred_result)
+# #print(pred_result)
 
-prrrr = [
-    {
-        'name': 'Admin', 
-     '2025-01-20': {'qq': 10, 'djf': 20, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-21': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-22': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-23': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-24': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-25': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-26': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}
-     }, 
-    {
-        'name': 'dd', 
-     '2025-01-20': {'qq': 23, 'djf': 21, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-21': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-22': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-23': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-24': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-25': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
-     '2025-01-26': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}
-     }
-    ]
+# prrrr = [
+#     {
+#         'name': 'Admin', 
+#      '2025-01-20': {'qq': 10, 'djf': 20, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-21': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-22': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-23': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-24': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-25': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-26': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}
+#      }, 
+#     {
+#         'name': 'dd', 
+#      '2025-01-20': {'qq': 23, 'djf': 21, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-21': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-22': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-23': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-24': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-25': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}, 
+#      '2025-01-26': {'qq': 0, 'djf': 0, 'ввв': 0, 'ффф': 0}
+#      }
+#     ]
 
-result = []
-for c in prrrr:
-    result.append([*c.keys()])
+# result = []
+# for my_element in pred_result:
+#     result.append([*my_element.keys()])
+#     for week_day in week_dates_str:
+#         aq = []
+#         point_name = ''
+#         for point in points:
+#             aq = [point, ]
+#             aq.append(my_element[week_day][point])
+#         result.append(aq)
 
-print(result)
-
-    
+# print(result)
 
