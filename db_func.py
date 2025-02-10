@@ -169,12 +169,20 @@ otvet = [
 
 
 ddq = select_data_dict("""
-SELECT*FROM userpoints_weekly 
+SELECT 
+SUM(points.point_name) AS total_points,
+SUM(userpoints_weekly.point_name) AS points_week,
+
+FROM userpoints_weekly 
 LEFT JOIN points ON userpoints_weekly.point_name = points.point_name 
 WHERE date BETWEEN ? AND ?
+GROUP BY userpoints_weekly.point_name, userpoints_weekly.telega_id 
 """, (monday.date(), sunday.date(),))
 dic1 = [dict(row) for row in ddq]
-print(dic1)#30
+print(dic1)#30 .
+
+
+
 
 ff = [
     {'SUM(uspt.point_score)*pnt.ratio': 150, 'ratio': 2, 'telega_id': 1949640271}, 
