@@ -19,6 +19,7 @@ def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None) -> Inl
         buttons.append(InlineKeyboardButton(text=x, callback_data=f"dayofweek_{x}"))
     kb.add(*buttons)
     kb.adjust(2)
+    kb.row(InlineKeyboardButton(text='❄ Не присылать оповещений', callback_data="dontremindme"))
     if sohranit != None and nazad == None:    
         kb.row(sohranit)  
     elif nazad != None and sohranit == None:
@@ -28,6 +29,7 @@ def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None) -> Inl
         kb.row(sohranit)
     if otmena!=None:
         kb.row(otmena)
+    
     return kb.as_markup(resize_keyboard=True)
 
 def hours(nazad = None, sohranit=None) -> InlineKeyboardMarkup:

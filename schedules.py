@@ -126,8 +126,47 @@ async def admin_excel_notify(bot: Bot):#----------------------------------------
 
 
 async def redday_notify(bot: Bot, chat_id, red_time):
+    from datetime import datetime, timedelta
+    from db_func import select_data_dict, delete_or_insert_data
+    # Получаем сегодняшнюю дату
+    today = datetime.now()
+    # Находим номер сегодняшнего дня недели (0 - понедельник, 6 - воскресенье)
+    today_weekday = today.weekday()
+    # Вычисляем дату понедельника текущей недели
+    monday = today - timedelta(days=today_weekday)
+    # Вычисляем дату воскресенья текущей недели
+    sunday = monday + timedelta(days=6)
+    
+    sqldata1 = select_data_dict("""
+                                SELECT 
+                                    usernames.name, 
+                                    userpoints_weekly.point_name, 
+                                    SUM(userpoints_weekly.point_score) AS total_point_score, 
+                                    (SUM(userpoints_weekly.point_score) * points.ratio) AS total_point_score_with_koef, 
+                                    CASE 
+                                        WHEN COUNT(DISTINCT userpoints_weekly.date) = 7 
+                                            THEN 
+                                                (SUM(userpoints_weekly.point_score) * points.ratio + points.bonus) 
+                                    END AS bonus_score 
+                                FROM userpoints_weekly 
+                                INNER JOIN usernames ON userpoints_weekly.telega_id = usernames.telega_id 
+                                INNER JOIN points ON points.name = userpoints_weekly.point_name 
+                                WHERE date BETWEEN ? AND ? 
+                                GROUP BY usernames.name,  userpoints_weekly.point_name
+                                """, (monday.date(), sunday.date(), ))
+    for x in sqldata1:
+        if x['bonus_score'] != None:
+            point_scr = x['']
+            delete_or_insert_data("UPDATE userpoints_weekly SET point_score=? WHERE telega_id=? and point_name=? and date=?", ())
+
     await bot.send_message(chat_id, f"Сегодня дедлайн нужно сдать отчет до {red_time}",reply_markup=user_replybtns())
     
+'''
+1. Делаем запрос в БД такой чтобы из него достать того кто достоин бонусов: расчет столбцов дат, расчет поинтов в определенную дату, расчет минимумов
+2. Делаем определенным юзерам вставку в таблицу бонусов
+3. Делаем отчет для бонусов 
+
+'''
 
 
 def time_corrector(time_str):
