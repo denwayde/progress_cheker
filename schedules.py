@@ -207,7 +207,7 @@ def time_corrector(time_str):
 
 import datetime
 # Определите время выполнения задачи
-scheduled_time = datetime.now().replace(hour=int(13), minute=int(0), second=0, microsecond=0)
+scheduled_time = datetime.now().replace(day=1,hour=int(13), minute=int(0), second=0, microsecond=0)
 
 # Если scheduled_time уже прошлое, добавьте день
 if scheduled_time < datetime.now():
