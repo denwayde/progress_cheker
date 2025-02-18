@@ -13,7 +13,8 @@ def admin_btns() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="Пункты", callback_data="points"),
         InlineKeyboardButton(text="Бонусы", callback_data="bonuses"),
         InlineKeyboardButton(text="Пользователи", callback_data="users"),
-        InlineKeyboardButton(text="Оповещения", callback_data="admin_notifications"),#InlineKeyboardButton(text="Время сдачи", callback_data="red_line"),
+        InlineKeyboardButton(text="Оповещения", callback_data="admin_notifications"),
+        InlineKeyboardButton(text="Сообщение пользователям", callback_data="msg_to_users"),
         InlineKeyboardButton(text="Отчистить прогресс", callback_data="deleteprogress_menu"),
     ]
    

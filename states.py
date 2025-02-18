@@ -22,3 +22,4 @@ class SetConfigsToBot(StatesGroup):
     set_rowbonus = State()
     set_colbonus = State()
     set_minsbonus = State()
+    set_msg_to_usr = State()

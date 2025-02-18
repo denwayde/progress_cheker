@@ -526,7 +526,6 @@ async def send_excel(call: CallbackQuery, bot: Bot):
 @router.callback_query(F.data == 'back_to_points_main_menu')
 async def usr_stgs_delete(call: CallbackQuery, state: FSMContext, bot: Bot):
     await call.message.answer(f"Меню пункты", reply_markup=points_main_menu())
-    # await bot.delete_messages(call.message.chat.id, (call.message.message_id, ))
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
     except TelegramBadRequest:
@@ -1091,3 +1090,25 @@ async def set_firstday_of_notification(message, state, bot, text):
         print(f"OSHIBKA UDALENIYA")
 
 
+#------------------------------------------------------------------------------------------------------АДМИН ВЫПОЛНЯЕТ ОТПРАВКУ СООБЩЕНИ ПОЛЬЗОВАТЕЛЯМ------------------------------------------------
+
+@router.callback_query(F.data == 'msg_to_users')
+async def msg_usr(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.clear()
+    await call.message.answer("Напишите сообщение пользователям", reply_markup=otmena_btn())
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await state.set_state(SetConfigsToBot.set_msg_to_usr)
+    await call.answer()
+
+
+@router.message(SetConfigsToBot.set_msg_to_usr)
+async def msg_usr_date(message: Message, bot: Bot, state: FSMContext):
+    await message.answer("", reply_markup=back_and_otmena_btn(data="msg_to_users"))!!!!!!!!!!!
+    try:
+        await bot.delete_messages(message.chat.id, (message.message_id,))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await state.set_state(SetConfigsToBot.set_msg_to_usr)

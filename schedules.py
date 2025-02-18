@@ -205,17 +205,7 @@ def time_corrector(time_str):
 
 
 
-import datetime
-# Определите время выполнения задачи
-scheduled_time = datetime.now().replace(day=1,hour=int(13), minute=int(0), second=0, microsecond=0)
 
-# Если scheduled_time уже прошлое, добавьте день
-if scheduled_time < datetime.now():
-    # Добавляем один день
-    scheduled_time = scheduled_time.replace(day=scheduled_time.day + 1)
-
-# Запланируйте задачу один раз на определенное время
-scheduler.add_job(admin_excel_notify, 'date', run_date=scheduled_time, args=())
 
 #print(time_corrector("11:30"))
 
