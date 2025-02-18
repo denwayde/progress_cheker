@@ -21,8 +21,8 @@ def schedule_jobs(bot: Bot):
     # scheduler.remove_all_jobs()
     #scheduler.add_job(schedule_for_users, 'interval', seconds = 30)
     #scheduler.add_job(hello, 'interval', seconds = 30)
-    scheduler.add_job(schedule_for_admins, 'interval', minutes = 10, args=(bot, ))
-    #scheduler.add_job(admin_red_alert, 'interval', seconds = 30)
+    scheduler.add_job(schedule_for_admins, 'interval', minutes = 3, args=(bot, ))
+    
 
 # async def hello():
 #     print("Heelo")
@@ -52,6 +52,8 @@ async def schedule_for_admins(bot: Bot):
         minute = zero_cleaner(arr_to_notify[1])
         scheduler.add_job(redday_notify, 'cron', day_of_week=str(days_of_week.index(admin_data[5])), hour=arr_to_notify[0], minute=minute, args=(bot, x[0], redtime_str))
     
+    scheduler.add_job(bonus_insertor, 'cron', day_of_week=6, hour=23, minute=15)#--------------- ZDES MI SOHRANYAEM BONUSI 
+    
     await schedule_for_users(bot)
     await admin_red_alert(bot)
     schedule_jobs(bot)
@@ -63,7 +65,7 @@ async def schedule_for_users(bot: Bot):
     data = select_data("SELECT*FROM usernames")#[(1, 'цска', 6293086969, '16', '00', 'Воскресенье-Воскресенье'), (2, 'динамо', None, None, None, None), (10, 'Admin', 1949640271, '9', '00', 'Понедельник-Воскресенье')]
     #print(data)
     for x in data:
-        if x[3] != None and x[2] != None:
+        if (x[3] != None and x[3]!='') and x[2] != None and (x[5] != None and x[5]!=''):
             #x[5] - den nedeli ('Воскресенье-Воскресенье')
             try:
                 period_arr_str = x[5].split('-')
@@ -72,7 +74,9 @@ async def schedule_for_users(bot: Bot):
                 else:
                     period_str_int = f"{days_of_week2.index(period_arr_str[0])}-{days_of_week2.index(period_arr_str[1])}"
             except IndexError:
-                period_str_int = f"{days_of_week2.index(x[5])}"      
+                period_str_int = f"{days_of_week2.index(x[5])}"
+            except ValueError:
+                pass      
             #bot = Bot(token=bot_key)
             minute = zero_cleaner(x[4])
             scheduler.add_job(noon_print, 'cron', day_of_week=period_str_int, hour=x[3], minute=minute, args=(bot, x[2]))
@@ -89,7 +93,22 @@ async def noon_print(bot: Bot, chat_id):
     else:
         await bot.send_message(chat_id, "Отправьте пожалуйста отчет по прогрессам.", reply_markup=user_replybtns())
     #await message.answer("Отправьте пожалуйста отчет по прогрессам.", reply_markup=user_replybtns)
-    
+
+async def bonus_insertor():
+    from db_func import insert_many
+    from variables import bonus_ratio_editor, bonus_data_process
+    lst1 = []
+    for summs in bonus_data_process():
+        bonus_of_row = bonus_ratio_editor(bonus=summs['bonus_of_rows'], my_num=summs['weekly_total_ratiosum'])*summs['count_row_bonus']
+        bonus_of_cols = bonus_ratio_editor(bonus=summs['bonus_of_cols'], my_num=summs['weekly_total_ratiosum'])*summs['count_column_bonus']
+        bonus_of_mins = bonus_ratio_editor(bonus=summs['bonus_of_mins'], my_num=summs['weekly_total_ratiosum'])*summs['bonus_of_mins_ratio']
+        tup1 = [(summs['telega_id'], bonus_of_row), (summs['telega_id'], bonus_of_cols), (summs['telega_id'], bonus_of_mins,)]
+        lst1 += [*tup1]
+        tup1 = []
+    # print(lst1)
+    insert_many("INSERT INTO user_bonus (telega_id, userbonus_score) VALUES (?, ?)", lst1)
+
+
 
 async def admin_red_alert(bot):
     #scheduler.remove_all_jobs()
@@ -184,6 +203,19 @@ def time_corrector(time_str):
         new_time_arr[0] = new_time_arr[0].replace('0', '')
     return new_time_arr
 
+
+
+import datetime
+# Определите время выполнения задачи
+scheduled_time = datetime.now().replace(hour=int(13), minute=int(0), second=0, microsecond=0)
+
+# Если scheduled_time уже прошлое, добавьте день
+if scheduled_time < datetime.now():
+    # Добавляем один день
+    scheduled_time = scheduled_time.replace(day=scheduled_time.day + 1)
+
+# Запланируйте задачу один раз на определенное время
+scheduler.add_job(admin_excel_notify, 'date', run_date=scheduled_time, args=())
 
 #print(time_corrector("11:30"))
 

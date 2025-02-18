@@ -4,7 +4,7 @@ from db_func import select_data
 
 def points_for_edit(start_call, text_btn, back_btn, data=None, zakrit = None) -> InlineKeyboardMarkup:#editusername_
     kb = InlineKeyboardBuilder()
-    usernames = select_data("SELECT name FROM points")
+    usernames = select_data("SELECT point_name FROM points")
     buttons = [InlineKeyboardButton(text=x[0], callback_data=f"{start_call}{x[0]}") for x in usernames]
     kb.add(*buttons)
     kb.adjust(2)

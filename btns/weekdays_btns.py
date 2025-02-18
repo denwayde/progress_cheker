@@ -5,7 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 days_of_week = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 
 
-def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None) -> InlineKeyboardMarkup:
+def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None, dontrmnd = None) -> InlineKeyboardMarkup:
     days_of_week1 = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
     try:
         days_of_week1.remove(remove_day)
@@ -19,7 +19,8 @@ def weekdays(remove_day = '', nazad = None, sohranit=None, otmena = None) -> Inl
         buttons.append(InlineKeyboardButton(text=x, callback_data=f"dayofweek_{x}"))
     kb.add(*buttons)
     kb.adjust(2)
-    kb.row(InlineKeyboardButton(text='❄ Не присылать оповещений', callback_data="dontremindme"))
+    if dontrmnd == None:
+        kb.row(InlineKeyboardButton(text='❄ Не присылать оповещений', callback_data="dontremindme"))
     if sohranit != None and nazad == None:    
         kb.row(sohranit)  
     elif nazad != None and sohranit == None:
