@@ -8,14 +8,14 @@ def admin_btns() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
  
     buttons = [
-        InlineKeyboardButton(text="Прогресс пользователей", callback_data="users_progress"),
-        InlineKeyboardButton(text="Excel отчет", callback_data="excel_report"),
-        InlineKeyboardButton(text="Пункты", callback_data="points"),
-        InlineKeyboardButton(text="Бонусы", callback_data="bonuses"),
-        InlineKeyboardButton(text="Пользователи", callback_data="users"),
-        InlineKeyboardButton(text="Оповещения", callback_data="admin_notifications"),
-        InlineKeyboardButton(text="Сообщение пользователям", callback_data="msg_to_users"),
-        InlineKeyboardButton(text="Отчистить прогресс", callback_data="deleteprogress_menu"),
+        InlineKeyboardButton(text="📈 Прогресс пользователей", callback_data="users_progress"),
+        InlineKeyboardButton(text="📑 Excel отчет", callback_data="excel_report"),
+        InlineKeyboardButton(text="⏺ Пункты", callback_data="points"),
+        InlineKeyboardButton(text="✨ Бонусы", callback_data="bonuses"),
+        InlineKeyboardButton(text="🙍🏻‍♀️🙍🏻‍♂️ Пользователи", callback_data="users"),
+        InlineKeyboardButton(text="🔊 Оповещения", callback_data="admin_notifications"),
+        InlineKeyboardButton(text="📧 Сообщение пользователям", callback_data="msg_to_users"),
+        InlineKeyboardButton(text="💣 Очистить прогресс", callback_data="deleteprogress_menu"),
     ]
    
     kb.add(*buttons)

@@ -23,3 +23,6 @@ class SetConfigsToBot(StatesGroup):
     set_colbonus = State()
     set_minsbonus = State()
     set_msg_to_usr = State()
+    set_msgtime_to_usr = State()
+    set_msgdatetime_to_usr = State()
+    set_msgtheme_to_usr = State()

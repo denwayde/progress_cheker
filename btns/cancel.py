@@ -25,7 +25,7 @@ def back_and_otmena_btn(data) -> InlineKeyboardMarkup:#editusername_
 
 def back_and_zakrit_btn(backbtn_text, data) -> InlineKeyboardMarkup:#editusername_
     kb = InlineKeyboardBuilder()
-    buttons = [InlineKeyboardButton(text=backbtn_text, callback_data=data), InlineKeyboardButton(text="❌ Закрыть", callback_data="otmena")]
+    buttons = [InlineKeyboardButton(text=backbtn_text, callback_data=data), InlineKeyboardButton(text="❌ Закрыть", callback_data="otmena"),]
     kb.add(*buttons)
     kb.adjust(2)
     return kb.as_markup(resize_keyboard=True)

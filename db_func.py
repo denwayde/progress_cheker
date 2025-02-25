@@ -63,26 +63,26 @@ def insert_many(insertion_query, lst):
 # from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # scheduler = AsyncIOScheduler(timezone = "Asia/Yekaterinburg")
 
-from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.background import BackgroundScheduler
 
-# Создайте экземпляр планировщика
-scheduler = BackgroundScheduler()
-from datetime import datetime
-import time
-# Определите время выполнения задачи
-scheduled_time = datetime.now().replace(day=18, month=2, year=2025, hour=int(16), minute=int(20))
+# # Создайте экземпляр планировщика
+# scheduler = BackgroundScheduler()
+# from datetime import datetime
+# import time
+# # Определите время выполнения задачи
+# scheduled_time = datetime.now().replace(day=18, month=2, year=2025, hour=int(16), minute=int(20))
 
-def admin_excel_notify():
-    print('hello')
-# Если scheduled_time уже прошлое, добавьте день
-if scheduled_time < datetime.now():
-    # Добавляем один день
-    scheduled_time = scheduled_time.replace(day=scheduled_time.day + 1)
+# def admin_excel_notify():
+#     print('hello')
+# # Если scheduled_time уже прошлое, добавьте день
+# if scheduled_time < datetime.now():
+#     # Добавляем один день
+#     scheduled_time = scheduled_time.replace(day=scheduled_time.day + 1)
 
-# Запланируйте задачу один раз на определенное время
-scheduler.add_job(admin_excel_notify, 'date', run_date=scheduled_time)
+# # Запланируйте задачу один раз на определенное время
+# scheduler.add_job(admin_excel_notify, 'date', run_date=scheduled_time)
 
-scheduler.start()
+# scheduler.start()
 
 # try:
 #     # Поддерживаем основной поток активным
@@ -92,3 +92,6 @@ scheduler.start()
 #     # Останавливаем планировщик при выходе
 #     scheduler.shutdown()
 #print(datetime.now().day)
+# msg_themes = select_data_dict("SELECT msg_theme FROM admin_messages WHERE msg_date IS NULL OR msg_date >= DATE('now')")
+
+# print([dict(x) for x in msg_themes])

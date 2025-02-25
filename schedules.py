@@ -1,5 +1,5 @@
 from aiogram import Bot
-from db_func import select_data
+from db_func import select_data, select_data_dict
 from dotenv import load_dotenv
 import os
 import excel_creator
@@ -80,6 +80,8 @@ async def schedule_for_users(bot: Bot):
             #bot = Bot(token=bot_key)
             minute = zero_cleaner(x[4])
             scheduler.add_job(noon_print, 'cron', day_of_week=period_str_int, hour=x[3], minute=minute, args=(bot, x[2]))
+        
+        await admins_msg_process(bot, x[2])
 
 
 
@@ -108,6 +110,24 @@ async def bonus_insertor():
     # print(lst1)
     insert_many("INSERT INTO user_bonus (telega_id, userbonus_score) VALUES (?, ?)", lst1)
 
+
+
+async def admins_msg_process(bot, telega_id):
+    from datetime import datetime
+    msgs = select_data_dict("SELECT*FROM admin_messages WHERE msg_date IS NULL OR msg_date >= DATE('now')")
+    for x in msgs:
+        if x['frequency'] == 'cron':
+            scheduler.add_job(send_msg, 'cron', day_of_week='0-6', hour=x['msg_hour'], minute=x['msg_minute'], args=(bot, telega_id, x['msg']))
+        if x['frequency'] == 'date':
+            datearr = x['msg_date'].split('-')
+            scheduler.add_job(send_msg, 'date', run_date=datetime(int(datearr[0]), int(datearr[1]), int(datearr[2]), x['msg_hour'], x['msg_minute']), args=(bot, telega_id, x['msg']))
+
+
+async def send_msg(bot, telega_id, msg_text):
+    if telega_id == int(admin_id):
+        await bot.send_message(telega_id, f"💥Сообщение от Администратора💥\n{msg_text}", reply_markup=admin_replybtns())
+    else:
+        await bot.send_message(telega_id, f"💥Сообщение от Администратора💥\n{msg_text}", reply_markup=user_replybtns())
 
 
 async def admin_red_alert(bot):

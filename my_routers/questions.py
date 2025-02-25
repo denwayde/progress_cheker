@@ -5,14 +5,15 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from states import SetConfigsToBot
 import os
-from re import fullmatch
 from dotenv import load_dotenv
-from db_func import delete_or_insert_data, insert_many, select_data, select_data_single
+from db_func import delete_or_insert_data, insert_many, select_data, select_data_single, select_data_dict
 from btns.admin_options import admin_btns
 from btns.admin_replybtn import admin_replybtns
 from aiogram.exceptions import TelegramBadRequest
 from btns.cancel import back_btn
 from variables import ttl_ratiosum_process
+from btns.bonuses import bonuses_btns
+from btns.cancel import back_and_otmena_btn
 load_dotenv()  # Загрузка переменных из файла .env
 admin_id = os.getenv('ADMIN_ID')
 
@@ -333,7 +334,11 @@ async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
 async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
     user = call.data.split('_')[1]
+    tel_id = select_data_dict("SELECT telega_id FROM usernames WHERE name = ?", (user,))
+    if tel_id != []:
+        delete_or_insert_data("DELETE FROM userpoints_weekly WHERE telega_id = ?", (tel_id[0]['telega_id'], ))    
     delete_or_insert_data("DELETE FROM usernames WHERE name = ?", (user, ))
+    
     await call.message.answer(f"Вы удалили \'{user}\'.'", reply_markup=get_users_settings())
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
@@ -378,10 +383,11 @@ async def back_to_main_menu(call: CallbackQuery, bot: Bot):
 
 from btns.bonuses import bonuses_btns
 @router.callback_query(F.data == 'bonuses')
-async def bonuses_process(call: CallbackQuery, bot: Bot):
-    await bonuses_caller(call, bot)
+async def bonuses_process(call: CallbackQuery, bot: Bot, state: FSMContext):
+    await bonuses_caller(call, bot, state)
 
-async def bonuses_caller(call, bot):
+async def bonuses_caller(call, bot, state):
+    await state.clear()
     await call.message.answer("В этом меню Вы можете добавить очки недельных бонусов за выполнение отчетов. Все бонусы будут учтены в общую сумму в конце недели.\nЕсли будет необходимость добавить новый вид бонусов свяжитесь с разработчиком бота", reply_markup=bonuses_btns())
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
@@ -391,8 +397,7 @@ async def bonuses_caller(call, bot):
 
 
 
-from btns.bonuses import bonuses_btns
-from btns.cancel import back_and_otmena_btn
+
 @router.callback_query(F.data == 'row_bonus', StateFilter(None))
 async def rowbonus_process(call: CallbackQuery, bot: Bot, state: FSMContext):
     await call.message.answer("В поле ввода укажите пожалуйста число бонуса, которое получит пользователь если он будет выполнять определенный поинт ежедневно в течении недели.\nЕсли Вы укажите число меньшее единицы то бонус будет считаться как процент от суммы очков набранных пользователем за неделю.\nЕсли Вы укажите число большее единицы, то это число будет просто суммироваться с суммой очков набранных пользователем за неделю.\nЕсли вы укажите 0 или 1, то бонус будет отменен.", reply_markup=back_and_otmena_btn(data='bonuses'))
@@ -426,13 +431,13 @@ async def rowbonus_process1(message: Message, bot: Bot, state: FSMContext):
 
 @router.callback_query(F.data == 'column_bonus', StateFilter(None))
 async def colbonus_process(call: CallbackQuery, bot: Bot, state: FSMContext):
+    await state.clear()
     await call.message.answer("В поле ввода укажите пожалуйста число бонуса, которые будет получать пользователь, если он выполнит все поинты за день.\nЕсли Вы укажите число меньшее единицы то бонус будет считаться как процент от суммы очков набранных пользователем за неделю.\nЕсли Вы укажите число большее единицы, то это число будет просто суммироваться с суммой очков набранных пользователем за неделю.\nЕсли вы укажите 0 или 1, то бонус будет отменен.", reply_markup=back_and_otmena_btn(data='bonuses'))
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
     await call.answer()
-    await state.clear()
     await state.set_state(SetConfigsToBot.set_colbonus)
 
 @router.message(SetConfigsToBot.set_colbonus)
@@ -445,9 +450,8 @@ async def rowbonus_process1(message: Message, bot: Bot, state: FSMContext):
         await message.answer(f"Бонус столбца установлен на значение {bonus_score}.", reply_markup=back_and_zakrit_btn(backbtn_text='⬅ К бонусам', data="bonuses"))
         await state.clear()
     else:
-        await state.clear()
         await message.answer("Введено невалидное значение. Попробуйте повторить ввод", reply_markup=zakrit_btn())
-        await state.set_state(SetConfigsToBot.set_rowbonus)
+        await state.set_state(SetConfigsToBot.set_colbonus)
     try:
         await bot.delete_messages(message.chat.id, (message.message_id,  message.message_id-1,))
     except TelegramBadRequest:
@@ -564,10 +568,10 @@ async def back_to_main_menu(call: CallbackQuery, bot: Bot):
 
 
 
-@router.callback_query(F.data == 'add_progress_points', StateFilter(None))
+@router.callback_query(F.data == 'add_progress_points')
 async def usr_stgs(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
-    await call.message.answer(f"Напишите боту название пункта прогресса.")
+    await call.message.answer(f"Напишите боту название пункта прогресса.", reply_markup=back_and_otmena_btn('points'))
     # await bot.delete_messages(call.message.chat.id, (call.message.message_id, ))
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
@@ -580,14 +584,13 @@ async def usr_stgs(call: CallbackQuery, state: FSMContext, bot: Bot):
 @router.message(SetConfigsToBot.set_points_score)
 async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(point_name = message.text)
-    point_name = await state.get_data()
-    await set_score_topoint(message, bot, state, point_name["point_name"])
+    await set_score_topoint(message, bot, state, message.text)
 
 async def set_score_topoint(message, bot, state, text):
-    await message.answer(f"Напишите боту коэффициент для {text}, в виде (2 или 1.2)", reply_markup=back_btn("back_to_points_main_menu"))
+    await message.answer(f"Напишите боту коэффициент для {text}, в виде (2 или 1.2)", reply_markup=back_btn("add_progress_points"))
     # await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
     try:
-        await bot.delete_messages(message.chat.id, (message.message_id-1,))
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1,))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
     await state.set_state(SetConfigsToBot.set_points_min)
@@ -606,30 +609,40 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
         if ',' in message.text:
             score = message.text.replace(",", ".").replace(" ", "")
         await state.update_data(point_score = score)
-        await set_min1(message, state)
-        await state.set_state(SetConfigsToBot.set_points_names)
+        await set_min1(message, state, bot)
     else:
-        await message.answer(f"Введено невалидное значение коэффициента, пожалуйста повторите ввод", reply_markup=back_btn("add_progress_points"))
+        await message.answer(f"Введено невалидное значение коэффициента, пожалуйста повторите ввод", reply_markup=back_and_otmena_btn('back_to_set_point_score'))
         await state.set_state(SetConfigsToBot.set_points_min)
     # await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
+        try:
+            await bot.delete_messages(message.chat.id, (message.message_id-1,))
+        except TelegramBadRequest:
+            print(f"OSHIBKA UDALENIYA")
+
+
+@router.callback_query(F.data == "back_to_set_min")
+async def set_min(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await set_min1(call.message, state, bot)
+    call.answer()
+
+async def set_min1(message, state, bot):
+    score_data = await state.get_data()
     try:
-        await bot.delete_messages(message.chat.id, (message.message_id-1,))
+        #print(f'Vse normalno {score_data}')
+        txt = message.text
+    except AttributeError:
+        #print(f'AttributeError {score_data}')
+        txt = score_data['point_score']
+    # if message.text == "" or message.text == None:
+    #     txt = score_data['point_score']
+    except KeyError:
+        print(score_data)
+    await message.answer(f"Напишите боту минимум для {score_data['point_name']}, коэффициент которого {score_data['point_score']}", reply_markup=back_and_otmena_btn('back_to_set_point_score'))
+    await state.set_state(SetConfigsToBot.set_points_names)
+    try:
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1,))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
-
-
-# @router.callback_query(F.data == "back_to_set_min")
-# async def set_min(call: CallbackQuery, state: FSMContext):
-#     await set_min1(call, state)
-#     call.answer()
-
-async def set_min1(message, state):
-    score_data = await state.get_data()
-    txt = message.text
-    if message.text == "" or message.text == None:
-        txt = score_data['point_score']
-    await message.answer(f"Напишите боту минимум для {score_data['point_name']}, коэффициент которого {txt}", reply_markup=back_btn("back_to_set_point_score"))
-    await state.set_state(SetConfigsToBot.set_points_names)
 
 
 @router.message(SetConfigsToBot.set_points_names)
@@ -640,20 +653,23 @@ async def usr_stgs_sub(message: Message, state: FSMContext, bot: Bot):
         if ',' in message.text:
             min = message.text.replace(",", ".").replace(" ", "")
         score_data = await state.get_data()
-
         #print(score_data['edit_pointname'])
-
         try:
-            delete_or_insert_data("UPDATE points SET point_name = ?, ratio = ?, mins = ? WHERE name = ?", (score_data['point_name'], score_data['point_score'], min, score_data['edit_pointname'], ))
+            pnt_name = score_data['point_name']
         except KeyError:
+            pnt_name = score_data['edit_pointname']
+        if select_data("SELECT point_name FROM points WHERE point_name = ?", (score_data['point_name'],)) != []:
+            delete_or_insert_data("UPDATE points SET point_name = ?, ratio = ?, mins = ? WHERE point_name = ?", (score_data['point_name'], score_data['point_score'], min, pnt_name, ))
+        else:
             delete_or_insert_data("INSERT INTO points (point_name, ratio, mins) VALUES(?,?,?)", (score_data['point_name'], score_data['point_score'], min, ))
-        await state.clear()
-        await message.answer(f"{score_data['point_name']}, коэффициент - {score_data['point_score']} и минимум - {min} был добален", reply_markup=points_main_menu())
+
+        await message.answer(f"{score_data['point_name']}, коэффициент - {score_data['point_score']} и минимум - {min} был добален", reply_markup=back_and_zakrit_btn('⬅ Назад','back_to_set_min'))
     else:
         await message.answer("Введено невалидное значение минимума, пожалуйста повторите ввод", reply_markup=back_btn("back_to_set_min"))
+        await state.set_state(SetConfigsToBot.set_points_names)
     # await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1, ))
     try:
-        await bot.delete_messages(message.chat.id, (message.message_id-1,))
+        await bot.delete_messages(message.chat.id, (message.message_id,message.message_id-1,))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
 
@@ -678,7 +694,7 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
     user = call.data.split('_')[1]
     await state.update_data(edit_pointname = user)
-    await call.message.answer(f"Вы хотите изменить пункт прогресса \'{user}\'. В поле ввода внесите новое имя для пункта прогресса \'{user}\'")
+    await call.message.answer(f"Вы хотите изменить пункт прогресса \'{user}\'. В поле ввода внесите новое имя для пункта прогресса \'{user}\'", reply_markup=back_and_otmena_btn('points'))
     # await bot.delete_messages(call.message.chat.id, (call.message.message_id, ))
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
@@ -913,8 +929,15 @@ async def usr_report_process(call: CallbackQuery, bot: Bot):
     else:
         msg = ''
         for i, x in enumerate(ttl_ratiosum_process()):
-            msg+=str(i+1)+") " + x['name']+ " " + str(x['total_ratiosun_with_bonuses']) + '\n'
-        await call.message.answer(msg, reply_markup=zakrit_btn())             
+            if i+1 == 1:
+                msg+=str(i+1)+") " + x['name']+ " " + str(x['total_ratiosun_with_bonuses']) + " 🥇" +'\n'
+            elif i+1 == 2:
+                msg+=str(i+1)+") " + x['name']+ " " + str(x['total_ratiosun_with_bonuses']) + " 🥈" +'\n'
+            elif i+1 == 3:
+                msg+=str(i+1)+") " + x['name']+ " " + str(x['total_ratiosun_with_bonuses']) + " 🥉" +'\n'
+            else:
+                msg+=str(i+1)+") " + x['name']+ " " + str(x['total_ratiosun_with_bonuses']) +'\n'
+        await call.message.answer(msg, reply_markup=back_and_zakrit_btn('⬅ Назад', 'back_to_users_menu'))      
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
     except TelegramBadRequest:
@@ -927,15 +950,14 @@ async def usr_report_process(call: CallbackQuery, bot: Bot):
 async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
     data = select_data("SELECT*FROM points")#[(1, 'kkk', 2, 10), (3, 'джф', 1.3, 30), (4, 'kit', 1, 60)]
     if data == []:
-        await call.message.answer("Минимумы еще не заданы", reply_markup=user_main())
+        await call.message.answer("Минимумы еще не заданы", reply_markup=back_and_zakrit_btn('⬅ Назад', 'back_to_users_menu'))
     else:
         output = ""
         for x in data:
             out_el = str(x[1]) + ": " +str(x[3]) + " / " + str(x[2])+ "\n"
             output = output + out_el
-
         #print(output)
-        await call.message.answer(f"Минимумы / Коэффициенты:\n {output}", reply_markup=user_main())
+        await call.message.answer(f"Минимумы / Коэффициенты:\n {output}", reply_markup=back_and_zakrit_btn('⬅ Назад', 'back_to_users_menu'))
     # await bot.delete_messages(call.message.chat.id, (call.message.message_id, ))
     try:
         await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
@@ -965,15 +987,16 @@ async def anotherfunc_proccess(message, bot):
     
 
 
-
+from variables import my_progress_process
 @router.callback_query(F.data == "user_progress")
 async def user_progress(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
-    my_progress = select_data("SELECT*FROM user_points WHERE telega_id = ?", (call.message.chat.id, ))
+    my_progress = my_progress_process()
     if my_progress != []:
-        msg = ''
+        msg = 'Название поинта: сумма / минимум\n'
         for x in my_progress:
-            msg+=f"🔸 {x[1]} - {x[3]}\n"
+            if x['telega_id'] == call.message.chat.id:
+                msg+=f"🔸 {x['point_name']}: {x['sum_point']} / {x['minimum']}\n"
         await call.message.answer(msg, reply_markup=back_btn(data="backto_another"))
     else:
         await call.message.answer("Пока Ваш прогресс пуст", reply_markup=back_btn(data="backto_another"))
@@ -1091,24 +1114,184 @@ async def set_firstday_of_notification(message, state, bot, text):
 
 
 #------------------------------------------------------------------------------------------------------АДМИН ВЫПОЛНЯЕТ ОТПРАВКУ СООБЩЕНИ ПОЛЬЗОВАТЕЛЯМ------------------------------------------------
-
+from btns.msg_usr import msg_usrbtns, msg_frequency, theme_explorer
 @router.callback_query(F.data == 'msg_to_users')
 async def msg_usr(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.clear()
-    await call.message.answer("Напишите сообщение пользователям", reply_markup=otmena_btn())
+    await call.message.answer("Меню сообщений", reply_markup=msg_usrbtns())
     try:
-        await bot.delete_messages(call.message.chat.id, (call.message.message_id,))
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+@router.callback_query(F.data == 'send_msg')
+async def msg_usr(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.clear()
+    await call.message.answer("Напишите пожалуйста тему сообщения", reply_markup=otmena_btn())
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await state.set_state(SetConfigsToBot.set_msgtheme_to_usr)
+    await call.answer()
+
+@router.message(SetConfigsToBot.set_msgtheme_to_usr)
+async def msg_usr(message: Message, state: FSMContext, bot: Bot):
+    await msg_usr_sub(message, state, bot)
+                
+@router.callback_query(F.data == 'send_msg')
+async def msg_usr(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await msg_usr_sub(call.message, state, bot)
+    await call.answer()
+
+async def msg_usr_sub(message, state, bot, state_data = None, from_change = False):
+    if state_data==None:
+        await state.update_data(msg_theme = message.text)
+    else:
+        await state.update_data(msg_theme = state_data)
+    if from_change==True:
+        await state.update_data(from_change = True)
+    await message.answer("Напишите пожалуйста сообщение пользователям", reply_markup=otmena_btn())
+    try:
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
     await state.set_state(SetConfigsToBot.set_msg_to_usr)
-    await call.answer()
-
+    
 
 @router.message(SetConfigsToBot.set_msg_to_usr)
 async def msg_usr_date(message: Message, bot: Bot, state: FSMContext):
-    await message.answer("", reply_markup=back_and_otmena_btn(data="msg_to_users"))!!!!!!!!!!!
+    await msg_usr_datesub(message, bot, state)
+
+@router.callback_query(F.data == 'set_msg_to_usr')
+async def msg_usr_date1(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await msg_usr_datesub(call.message, bot, state)
+
+async def msg_usr_datesub(message, bot, state):
+    await state.update_data(msg = message.text)
+    await message.answer("Выберите пожалуйста частоту оповещений пользователей", reply_markup=msg_frequency())
     try:
-        await bot.delete_messages(message.chat.id, (message.message_id,))
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1))
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
-    await state.set_state(SetConfigsToBot.set_msg_to_usr)
+
+
+@router.callback_query(F.data == 'send_msg_repeatly')
+async def msg_usr(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.update_data(frequency = 'cron')
+    await call.message.answer("Напишите пожалуйста в какое время следует оповещать пользователей, в формате: 21:05", reply_markup=back_and_otmena_btn('set_msg_to_usr'))
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1,))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await state.set_state(SetConfigsToBot.set_msgtime_to_usr)
+    await call.answer()
+
+
+async def msgtime_to_usr(message, bot, state):
+    msg_data = await state.get_data()
+    if re.match(r'^(?:[01]\d|2[0-3]):[0-5]\d$', message.text):
+        time = message.text
+        if ' ' in message.text:
+            time = message.text.replace(" ", "")
+        time = time.split(":")
+        if hasattr(msg_data, 'from_change'):
+            delete_or_insert_data("UPDATE admin_messages SET msg=?, frequency=?, msg_hour=?, msg_minute=?) WHERE msg_theme=?", (msg_data['msg'], msg_data['frequency'], time[0], time[1], msg_data['msg_theme']))
+        else:
+            delete_or_insert_data("INSERT INTO admin_messages (msg, msg_theme, frequency, msg_hour, msg_minute) VALUES (?,?,?,?,?)", (msg_data['msg'], msg_data['msg_theme'], msg_data['frequency'], time[0], str(int(time[1])+5) if int(time[1]) <= 54 else time[1]))
+        await message.answer(f" Ваше сообщение будет присылаться всем ежедневно в {message.text}", reply_markup=back_and_zakrit_btn(backbtn_text='⬅ Назад', data="send_msg_repeatly"))
+        await state.clear()
+    else:
+        await message.answer("Введено невалидное значение. Попробуйте повторить ввод", reply_markup=zakrit_btn())
+        await state.set_state(SetConfigsToBot.set_msgtime_to_usr)
+    try:
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1,))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+
+@router.message(SetConfigsToBot.set_msgtime_to_usr)
+async def msg_usr_date(message: Message, bot: Bot, state: FSMContext):
+    await msgtime_to_usr(message, bot, state)
+
+
+
+@router.callback_query(F.data == 'send_msg_ones')
+async def send_msg_ones(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.update_data(frequency = 'date')
+    await call.message.answer("Напишите пожалуйста в какую дату и время следует оповестить пользователей, в формате: 20.02.2025 11:23", reply_markup=back_and_otmena_btn('set_msg_to_usr'))
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await state.set_state(SetConfigsToBot.set_msgdatetime_to_usr)
+    await call.answer()
+
+from variables import is_in_future_datetime
+@router.message(SetConfigsToBot.set_msgdatetime_to_usr)
+async def send_msg_ones1(message: Message, bot: Bot, state: FSMContext):
+    if re.match(r'^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2} (0[0-9]|1[0-9]|2[0-3]):[0-5]\d$', message.text):
+        if is_in_future_datetime(date_str=message.text, date_format='%d.%m.%Y %H:%M'):
+            date_time = message.text
+            date_time = date_time.split(" ")
+            date = date_time[0]
+            date_obj = datetime.strptime(date, '%d.%m.%Y')
+            new_date_str = date_obj.strftime('%Y-%m-%d')
+            # new_dttime = new_date_str+" "+date_time[1]
+            time_arr = date_time[1].split(":")
+            msg_data = await state.get_data()
+            if hasattr(msg_data, 'from_change'):
+                delete_or_insert_data("UPDATE admin_messages SET msg=?, frequency=?, msg_hour=?, msg_minute=?, msg_date = ? WHERE msg_theme=?", (msg_data['msg'], msg_data['frequency'], time_arr[0], str(int(time_arr[1])+5), new_date_str, msg_data['msg_theme']))
+            else:
+                delete_or_insert_data("INSERT INTO admin_messages (msg, msg_theme, frequency, msg_hour, msg_minute, msg_date) VALUES (?,?,?,?,?,?)", (msg_data['msg'], msg_data['msg_theme'], 'date', time_arr[0], str(int(time_arr[1])+5) if int(time_arr[1]) <= 54 else time_arr[1], new_date_str, ))
+            await message.answer(f"Ваше сообщение будет отправлено в {message.text}", reply_markup=back_and_zakrit_btn(backbtn_text='⬅ Назад', data="send_msg_ones"))
+            await state.clear()
+        else:
+            await message.answer("Нельзя отправить на это время и дату. Попробуйте повторить ввод", reply_markup=zakrit_btn())
+            await state.set_state(SetConfigsToBot.set_msgdatetime_to_usr)
+    else:
+        await message.answer("Введено невалидное значение. Попробуйте повторить ввод", reply_markup=zakrit_btn())
+        await state.set_state(SetConfigsToBot.set_msgdatetime_to_usr)
+    try:
+        await bot.delete_messages(message.chat.id, (message.message_id, message.message_id-1,))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+
+
+@router.callback_query(F.data == 'changemsg')
+async def change_msg(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.clear()
+    await call.message.answer("Выберите сообщение, которое Вы хотите изменить", reply_markup=theme_explorer('changemsg'))
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith('changemsg_'))
+async def change_msg1(call: CallbackQuery, state: FSMContext, bot: Bot):
+    msg_theme = call.data.split('_')[1]
+    await msg_usr_sub(call.message, state, bot, state_data = msg_theme, from_change = True)
+
+
+@router.callback_query(F.data == 'deletemsg')
+async def delete_msg(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await state.clear()
+    await call.message.answer("Выберите сообщение, которое Вы хотите удалить", reply_markup=theme_explorer('deletemsg'))
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+@router.callback_query(F.data.startswith('deletemsg_'))
+async def delete_msg1(call: CallbackQuery, state: FSMContext, bot: Bot):
+    msg_theme = call.data.split('_')[1]
+    delete_or_insert_data("DELETE FROM admin_messages WHERE msg_theme=?", (msg_theme, ))
+    await call.message.answer("Сообщение удалено", reply_markup=zakrit_btn())
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()

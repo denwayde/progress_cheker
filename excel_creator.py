@@ -117,7 +117,7 @@ def exsel_creator():
     just_usenames = select_data_single("SELECT name FROM usernames ORDER BY name")
     # Создаем новую рабочую книгу
     workbook = Workbook()
-    points_release = ["", *just_points, "Сумма", "Сумма c коэффициентом", "Сумма с бонусом"]
+    #points_release = ["", *just_points, "Сумма", "Сумма c коэффициентом", "Сумма с бонусом"]
     # Добавляем новый лист
     sheet1 = workbook.active  # по умолчанию уже есть активный лист
     sheet1.title = "Подробный недельный отчет"  # переименовываем лист
