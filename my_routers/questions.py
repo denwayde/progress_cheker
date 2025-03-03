@@ -747,13 +747,13 @@ async def edit_username(call: CallbackQuery, state: FSMContext, bot: Bot):
 #------------------------------------------------------------------------------------------------------АДМИН ПРОСМАТРИВАЕТ РЕЙТИНГ----------------------------------------------------------
 @router.callback_query(F.data == 'users_progress')
 async def usr_stgs_delete(call: CallbackQuery, bot: Bot):
-    data = select_data("SELECT* FROM user_points INNER JOIN points ON points.point_name = user_points.point_name INNER JOIN usernames ON user_points.telega_id = usernames.telega_id")
+    data = ttl_ratiosum_process()
     #progress_points = select_data("SELECT*FROM user_points")
     if data == []:
-        await call.message.answer("Пока прогресс пользователей пуст", reply_markup=admin_btns())
+        await call.message.answer("Пока прогресс пользователей пуст", reply_markup=zakrit_btn())
     else:
         final_message = ''
-        for i,x in enumerate(ttl_ratiosum_process()):
+        for i,x in enumerate(data):
             final_message += str(i+1) + ") "+x['name']+" - "+str(x['total_ratiosun_with_bonuses'])+"\n"
         await call.message.answer(final_message, reply_markup=zakrit_btn())
     # await bot.delete_messages(call.message.chat.id, (call.message.message_id, ))
