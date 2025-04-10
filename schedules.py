@@ -6,6 +6,7 @@ import excel_creator
 from aiogram.types import FSInputFile
 from btns.admin_replybtn import admin_replybtns
 import asyncio
+from aiogram.exceptions import TelegramForbiddenError
 
 load_dotenv() 
 bot_key = os.getenv('BOT_TOKEN')
