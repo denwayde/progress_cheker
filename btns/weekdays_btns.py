@@ -38,7 +38,7 @@ def hours(nazad = None, sohranit=None) -> InlineKeyboardMarkup:
     # kb.button(text="Да")
     # kb.button(text="Нет")
     buttons = []#InlineKeyboardButton(text="Отчет", callback_data="user_report")
-    for x in range(1,25):
+    for x in range(1,24):
         buttons.append(InlineKeyboardButton(text=str(x), callback_data=f"hour_{x}"))
     kb.add(*buttons)
     kb.adjust(3)

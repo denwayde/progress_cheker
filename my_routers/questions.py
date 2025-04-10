@@ -1104,7 +1104,12 @@ async def start_admin_notification(call: CallbackQuery, bot: Bot, state: FSMCont
 
 async def set_firstday_of_notification(message, state, bot, text):
     await message.answer(text, reply_markup=weekdays(remove_day='', otmena=InlineKeyboardButton(text="❌ Отмена", callback_data="otmena")))
-    await state.update_data(name = message.text)
+    notification_date = await state.get_data()
+    try:
+        await state.update_data(name = notification_date['name1'])
+    except Exception as e:
+        print("Oshibka "+ str(e))
+        await state.update_data(name = message.text)
     await state.set_state(SetConfigsToBot.set_notification) 
     # await bot.delete_messages(message.chat.id, (message.message_id, ))
     try:
