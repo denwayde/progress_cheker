@@ -26,3 +26,4 @@ class SetConfigsToBot(StatesGroup):
     set_msgtime_to_usr = State()
     set_msgdatetime_to_usr = State()
     set_msgtheme_to_usr = State()
+    set_rub = State()

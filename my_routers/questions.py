@@ -1300,3 +1300,101 @@ async def delete_msg1(call: CallbackQuery, state: FSMContext, bot: Bot):
     except TelegramBadRequest:
         print(f"OSHIBKA UDALENIYA")
     await call.answer()
+
+from btns.sum_btns import sum_btns
+@router.message(Command("project_support"))
+async def charity_start(message: Message, state: FSMContext, bot: Bot):
+    await message.answer("Благодарим Вас, за то что пользуйтесь нашим ботом. Вы можете поддержать развите подобных проетов небольшой суммой.",  reply_markup=sum_btns())
+    #await state.set_state(SetConfigsToBot.set_rub)
+
+async def rub_proccess(message, state, bot, sum):
+    my_amount = int(f'{sum}00')
+    await bot.send_invoice(
+        chat_id=message.chat.id, 
+        title="💥💥💥", 
+        description="На развите подобных проектов", 
+        payload="project_support", 
+        provider_token='381764678:TEST:119549', 
+        currency="RUB", 
+        start_parameter="charity", 
+        need_phone_number=True, 
+        prices=[{'label': 'Руб', 'amount': my_amount}]
+        )
+    await state.clear()
+
+
+@router.callback_query(F.data == '150_rub')
+async def rub_150(call: CallbackQuery, state: FSMContext, bot: Bot):
+    #await state.update_data(rub = call.data.split("_")[0])
+    await rub_proccess(call.message, state, bot, call.data.split("_")[0])
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+@router.callback_query(F.data == '300_rub')
+async def rub_300(call: CallbackQuery, state: FSMContext, bot: Bot):
+    #await state.update_data(rub = call.data.split("_")[0])
+    await rub_proccess(call.message, state, bot, call.data.split("_")[0])
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+@router.callback_query(F.data == 'vvesti_rub')
+async def rub_vvesti(call: CallbackQuery, state: FSMContext, bot: Bot):
+    #await state.update_data(rub = call.data.split("_")[0])
+    #await rub_proccess(call.message, state, bot, call.data.split("_")[0])
+    await call.message.answer('Введите пожалуйста сумму пожертвования (без Р или руб).')
+    await state.set_state(SetConfigsToBot.set_rub)
+    try:
+        await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    except TelegramBadRequest:
+        print(f"OSHIBKA UDALENIYA")
+    await call.answer()
+
+@router.message(F.text.isdigit()==False, SetConfigsToBot.set_rub)
+async def rub_handler1(message: Message, state: FSMContext, bot: Bot):
+    await message.answer('Похоже что Вы написали не число. Попробуйте ввести сумму пожертвования снова')
+    await state.set_state(SetConfigsToBot.set_rub)
+
+from re import fullmatch
+@router.message(F.text.isdigit(), SetConfigsToBot.set_rub)
+async def rub_handler2(message: Message, state: FSMContext, bot: Bot):
+    await rub_proccess(message, state, bot, message.text)
+
+
+
+from aiogram.types import PreCheckoutQuery
+@router.pre_checkout_query()
+async def process_pre_checkout_query(pre_checkout_query: PreCheckoutQuery, bot: Bot, state: FSMContext):
+    #print(f'pre_chekaut:{pre_checkout_query}')
+    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
+    #await bot.send_message(pre_checkout_query.from_user.id, 'Если вдруг оплата не прошла по техническим причинам, Вы можете повторить платеж.')
+    
+
+async def num_handler(call, state, bot, text ,new_state):
+    if '_' in call.data: 
+        my_num = call.data.split('_')
+        await state.update_data(num = my_num[1])
+    # tmp_data = await state.get_data()
+    # await state.update_data(tmp_data)
+    await bot.delete_messages(call.message.chat.id, (call.message.message_id, call.message.message_id-1))
+    await call.message.answer(text)
+    await call.answer()
+    await state.set_state(new_state)
+    #'Напишите пожалуйста сумму пожертвования для РИЛИ'
+
+@router.callback_query(F.data == "payagain")
+async def nnnn(call: CallbackQuery, state: FSMContext, bot: Bot):
+    await num_handler(call, state, bot, 'Проверьте баланс Вашей карты. Или измените сумму платежа и попробуйте ввести эту сумму.', SetConfigsToBot.set_rub)
+
+
+from aiogram.types import ContentType
+@router.message(lambda mes: mes.content_types == ContentType.SUCCESSFUL_PAYMENT)
+async def rub_ssss(message: Message, bot: Bot, state: FSMContext):
+    #await rub_handler(message, bot, state)
+    await message.answer("Ever==+++")
+
